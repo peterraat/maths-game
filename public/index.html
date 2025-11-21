@@ -12,7 +12,11 @@
         <span class="logo-dot"></span>
         <span class="logo-text">Math Trainer</span>
       </div>
-      <button id="contrastToggle" class="contrast-toggle" aria-label="Toggle high contrast">
+      <button
+        id="contrastToggle"
+        class="contrast-toggle"
+        aria-label="Toggle high contrast"
+      >
         HC
       </button>
     </header>
@@ -23,7 +27,6 @@
 
         <!-- Controls -->
         <div class="controls-row">
-          <!-- Choose a specific multiplication table (2–20) -->
           <label class="field">
             <span class="field-label">Multiplication</span>
             <select id="baseTable" class="field-input">
@@ -50,7 +53,6 @@
             </select>
           </label>
 
-          <!-- Max number for the other side -->
           <label class="field">
             <span class="field-label">Max number</span>
             <select id="maxTable" class="field-input">
@@ -88,15 +90,13 @@
             <span class="equals">=</span>
           </div>
 
-          <!-- Answer box (readonly on mobile so no Samsung keyboard) -->
-          <input
-            id="answerInput"
-            type="text"
-            class="answer-input"
-            placeholder="Your answer"
-            autocomplete="off"
-            readonly
-          />
+          <!-- Answer display (DIV instead of INPUT: no OS keyboard ever) -->
+          <div
+            id="answerDisplay"
+            class="answer-display"
+            aria-label="Your answer"
+            role="textbox"
+          ></div>
 
           <!-- Custom keypad -->
           <div id="keypad" class="keypad">
@@ -116,12 +116,8 @@
           </div>
 
           <div class="button-row">
-            <button id="submitButton" class="btn primary">
-              Check
-            </button>
-            <button id="skipButton" class="btn ghost">
-              Skip
-            </button>
+            <button id="submitButton" class="btn primary">Check</button>
+            <button id="skipButton" class="btn ghost">Skip</button>
           </div>
         </div>
 

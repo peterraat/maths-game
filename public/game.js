@@ -2,7 +2,7 @@
 (() => {
   const leftOperandEl = document.getElementById("leftOperand");
   const rightOperandEl = document.getElementById("rightOperand");
-  const answerInput = document.getElementById("answerInput");
+  const answerDisplay = document.getElementById("answerDisplay");
   const submitButton = document.getElementById("submitButton");
   const skipButton = document.getElementById("skipButton");
   const startButton = document.getElementById("startButton");
@@ -19,9 +19,12 @@
   const timeDisplayEl = document.getElementById("timeDisplay");
   const keypadEl = document.getElementById("keypad");
   const contrastToggle = document.getElementById("contrastToggle");
-
   const resultOverlay = document.getElementById("resultOverlay");
   const resultIcon = document.getElementById("resultIcon");
+
+  const isMobile =
+    /Mobi|Android|iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+    window.innerWidth <= 600;
 
   let correct = 0;
   let wrong = 0;
@@ -30,15 +33,15 @@
   let lastQuestionKey = "";
   let isRunning = false;
   let timerId = null;
-  let remainingMs = 60000; // 60 seconds
+  let remainingMs = 60000;
   let overlayTimeout = null;
 
-  const isMobile =
-    /Mobi|Android|iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
-    window.innerWidth <= 600;
+  // answer buffer (since we no longer use an <input>)
+  let answerBuffer = "";
 
-  // --- Audio and vibration helpers ---
+  // --- Audio helpers ---
   let audioCtx = null;
+  let audioUnlocked = false;
 
   function getAudioContext() {
     if (!audioCtx) {
@@ -51,9 +54,21 @@
     return audioCtx;
   }
 
-  function playTone(freq, duration, gainValue = 0.2) {
+  function unlockAudio() {
     const ctx = getAudioContext();
     if (!ctx) return;
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+    audioUnlocked = true;
+  }
+
+  function playTone(freq, duration, gainValue = 0.3) {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    if (!audioUnlocked && ctx.state === "suspended") {
+      // will become audible after unlock, but still schedule
+    }
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.frequency.value = freq;
@@ -70,16 +85,14 @@
   }
 
   function playClickSound() {
-    playTone(800, 60, 0.12);
+    playTone(800, 60, 0.2);
   }
-
   function playSuccessSound() {
-    playTone(900, 120, 0.2);
-    setTimeout(() => playTone(1200, 120, 0.2), 100);
+    playTone(900, 120, 0.25);
+    setTimeout(() => playTone(1200, 120, 0.25), 100);
   }
-
   function playFailSound() {
-    playTone(200, 160, 0.22);
+    playTone(200, 180, 0.3);
   }
 
   function vibrate(pattern) {
@@ -88,7 +101,7 @@
     }
   }
 
-  // --- Core helpers ---
+  // --- Utils ---
   function randInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
@@ -102,19 +115,21 @@
     accuracyEl.textContent = `${accuracy}%`;
   }
 
-  function setFeedback(message, type = "") {
-    feedbackEl.textContent = message;
+  function setFeedback(msg, type = "") {
+    feedbackEl.textContent = msg;
     feedbackEl.classList.remove("correct", "wrong");
     if (type) feedbackEl.classList.add(type);
   }
 
-  // Format milliseconds as mm:ss.cc (centiseconds)
+  function updateAnswerDisplay() {
+    answerDisplay.textContent = answerBuffer || "";
+  }
+
   function formatTime(ms) {
     const totalSeconds = ms / 1000;
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = Math.floor(totalSeconds % 60);
     const centiseconds = Math.floor((ms % 1000) / 10);
-
     const mm = String(minutes).padStart(2, "0");
     const ss = String(seconds).padStart(2, "0");
     const cs = String(centiseconds).padStart(2, "0");
@@ -128,12 +143,10 @@
 
   function flashResult(type) {
     if (!resultOverlay || !resultIcon) return;
-
     if (overlayTimeout) {
       clearTimeout(overlayTimeout);
       overlayTimeout = null;
     }
-
     resultOverlay.classList.remove("hidden");
     resultIcon.classList.remove("correct-flash", "wrong-flash", "show");
 
@@ -144,11 +157,8 @@
       resultIcon.textContent = "✕";
       resultIcon.classList.add("wrong-flash");
     }
-
-    // Force reflow so the CSS transition retriggers
     void resultIcon.offsetWidth;
     resultIcon.classList.add("show");
-
     overlayTimeout = setTimeout(() => {
       resultIcon.classList.remove("show");
       resultOverlay.classList.add("hidden");
@@ -162,11 +172,9 @@
     let a, b, key;
     do {
       if (!Number.isNaN(baseVal)) {
-        // Fixed table (e.g. always 7 × ?)
         a = baseVal;
         b = randInt(1, maxTable);
       } else {
-        // Mixed practice within range
         a = randInt(2, maxTable);
         b = randInt(1, maxTable);
       }
@@ -179,13 +187,9 @@
     leftOperandEl.textContent = a;
     rightOperandEl.textContent = b;
 
-    answerInput.value = "";
-    if (!isMobile) {
-      answerInput.focus();
-    } else {
-      answerInput.blur();
-    }
-    setFeedback("Type your answer or use the keypad, then press Enter or Check.");
+    answerBuffer = "";
+    updateAnswerDisplay();
+    setFeedback("Use the keypad or keyboard, then press Enter or Check.");
   }
 
   function handleCorrect() {
@@ -199,11 +203,11 @@
     nextQuestion();
   }
 
-  function handleWrong(userValue) {
+  function handleWrong(value) {
     wrong += 1;
     streak = 0;
     setFeedback(
-      `Not quite. You said ${userValue}, correct is ${currentAnswer}.`,
+      `Not quite. You said ${value}, correct is ${currentAnswer}.`,
       "wrong"
     );
     flashResult("wrong");
@@ -215,7 +219,7 @@
 
   function submitAnswer() {
     if (!isRunning) return;
-    const raw = answerInput.value.trim();
+    const raw = (answerBuffer || "").trim();
     if (raw === "") {
       setFeedback("Enter an answer first 😄");
       return;
@@ -244,7 +248,6 @@
     remainingMs = 60000;
     timedInfoEl.classList.remove("hidden");
     updateTimeDisplay();
-
     timerId = setInterval(() => {
       remainingMs -= 50;
       if (remainingMs <= 0) {
@@ -270,24 +273,20 @@
     updateStats();
   }
 
-  // FULL reset for Stop button
   function resetEverything() {
     isRunning = false;
     stopTimer();
     remainingMs = 60000;
     updateTimeDisplay();
-
     correct = 0;
     wrong = 0;
     streak = 0;
     lastQuestionKey = "";
     updateStats();
-
-    setFeedback("Press Start to begin.");
-    answerInput.value = "";
-
+    answerBuffer = "";
+    updateAnswerDisplay();
     timedInfoEl.classList.add("hidden");
-
+    setFeedback("Press Start to begin.");
     if (overlayTimeout) {
       clearTimeout(overlayTimeout);
       overlayTimeout = null;
@@ -296,16 +295,16 @@
       resultIcon.classList.remove("show", "correct-flash", "wrong-flash");
       resultOverlay.classList.add("hidden");
     }
-
     document.body.classList.remove("playing");
-    if (keypadEl) {
-      keypadEl.classList.remove("keypad-visible");
-    }
+    if (keypadEl) keypadEl.classList.remove("keypad-visible");
   }
 
   function startGame() {
+    unlockAudio(); // first tap unlocks sound on mobile
     isRunning = true;
     resetGameState();
+    answerBuffer = "";
+    updateAnswerDisplay();
 
     if (modeSelect.value === "timed") {
       startTimer();
@@ -317,64 +316,53 @@
     }
 
     document.body.classList.add("playing");
-    if (keypadEl) {
-      keypadEl.classList.add("keypad-visible");
-    }
-    if (isMobile) {
-      answerInput.blur();
-    } else {
-      answerInput.focus();
-    }
+    if (keypadEl) keypadEl.classList.add("keypad-visible");
     setFeedback("Game started. Good luck! 🎯");
     nextQuestion();
   }
 
-  // --- Custom keypad handler ---
+  // Keypad handler
   if (keypadEl) {
     keypadEl.addEventListener("click", (e) => {
       const btn = e.target.closest("button");
       if (!btn) return;
+      unlockAudio();
       const key = btn.dataset.key;
       if (!key) return;
 
-      // Click sound + light vibrate for any press
       playClickSound();
       vibrate(20);
 
       if (key === "back") {
-        answerInput.value = answerInput.value.slice(0, -1);
+        answerBuffer = answerBuffer.slice(0, -1);
       } else if (key === "clear") {
-        answerInput.value = "";
+        answerBuffer = "";
       } else if (key === "enter") {
         submitAnswer();
       } else {
-        // 0-9
-        answerInput.value += key;
+        answerBuffer += key;
       }
+      updateAnswerDisplay();
     });
   }
 
-  // --- High contrast toggle ---
+  // High contrast toggle
   if (contrastToggle) {
     contrastToggle.addEventListener("click", () => {
-      const html = document.documentElement;
-      html.classList.toggle("high-contrast");
+      document.documentElement.classList.toggle("high-contrast");
     });
   }
 
-  // --- Event listeners ---
+  // Buttons
   startButton.addEventListener("click", () => {
     startGame();
   });
-
   stopButton.addEventListener("click", () => {
     resetEverything();
   });
-
   submitButton.addEventListener("click", () => {
     submitAnswer();
   });
-
   skipButton.addEventListener("click", () => {
     if (!isRunning) return;
     streak = 0;
@@ -387,36 +375,26 @@
     nextQuestion();
   });
 
-  // Desktop keyboard input support
-  answerInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      submitAnswer();
-    }
-  });
-
+  // Desktop keyboard support (no input element)
   window.addEventListener("keydown", (e) => {
     if (!isRunning) return;
-    if (e.key >= "0" && e.key <= "9" && !isMobile) {
-      answerInput.value += e.key;
-    } else if (e.key === "Backspace" && !isMobile) {
-      answerInput.value = answerInput.value.slice(0, -1);
+
+    // allow numbers and backspace
+    if (!isMobile && e.key >= "0" && e.key <= "9") {
+      answerBuffer += e.key;
+      updateAnswerDisplay();
+    } else if (!isMobile && e.key === "Backspace") {
+      answerBuffer = answerBuffer.slice(0, -1);
+      updateAnswerDisplay();
     } else if (e.key === "Enter") {
       submitAnswer();
     }
   });
 
-  // Configure input for mobile vs desktop to control keyboards
-  if (isMobile) {
-    answerInput.setAttribute("readonly", "true");
-    answerInput.setAttribute("inputmode", "none");
-  } else {
-    answerInput.removeAttribute("readonly");
-    answerInput.setAttribute("inputmode", "numeric");
-  }
-
-  // Start in idle state
+  // Initial state
   updateStats();
   updateTimeDisplay();
+  answerBuffer = "";
+  updateAnswerDisplay();
   setFeedback("Press Start to begin.");
 })();
