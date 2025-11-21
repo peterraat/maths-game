@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Multiplication Trainer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="logo">
+        <span class="logo-dot"></span>
+        <span class="logo-text">Math Trainer</span>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <section class="card game-card">
+        <h1 class="game-title">Multiplication Trainer</h1>
+
+        <!-- Controls -->
+        <div class="controls-row">
+          <!-- Choose a specific multiplication table (2–20) -->
+          <label class="field">
+            <span class="field-label">Multiplication</span>
+            <select id="baseTable" class="field-input">
+              <option value="" selected>Mix 2–20</option>
+              <option value="2">×2 table</option>
+              <option value="3">×3 table</option>
+              <option value="4">×4 table</option>
+              <option value="5">×5 table</option>
+              <option value="6">×6 table</option>
+              <option value="7">×7 table</option>
+              <option value="8">×8 table</option>
+              <option value="9">×9 table</option>
+              <option value="10">×10 table</option>
+              <option value="11">×11 table</option>
+              <option value="12">×12 table</option>
+              <option value="13">×13 table</option>
+              <option value="14">×14 table</option>
+              <option value="15">×15 table</option>
+              <option value="16">×16 table</option>
+              <option value="17">×17 table</option>
+              <option value="18">×18 table</option>
+              <option value="19">×19 table</option>
+              <option value="20">×20 table</option>
+            </select>
+          </label>
+
+          <!-- Max number for the other side -->
+          <label class="field">
+            <span class="field-label">Max number</span>
+            <select id="maxTable" class="field-input">
+              <option value="5">Up to 5</option>
+              <option value="10" selected>Up to 10</option>
+              <option value="12">Up to 12</option>
+              <option value="20">Up to 20</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Mode</span>
+            <select id="mode" class="field-input">
+              <option value="practice" selected>Practice</option>
+              <option value="timed">Timed (60s)</option>
+            </select>
+          </label>
+
+          <button id="startButton" class="btn primary">Start</button>
+          <button id="stopButton" class="btn danger">Stop</button>
+        </div>
+
+        <!-- Digital timer -->
+        <div id="timedInfo" class="timed-info hidden">
+          <span class="timer-label">Time left</span>
+          <div id="timeDisplay" class="timer-display">01:00.00</div>
+        </div>
+
+        <!-- Question area -->
+        <div class="question-area">
+          <div class="question-pill">
+            <span id="leftOperand">7</span>
+            <span class="operator">×</span>
+            <span id="rightOperand">8</span>
+            <span class="equals">=</span>
+          </div>
+
+          <input
+            id="answerInput"
+            type="number"
+            inputmode="numeric"
+            class="answer-input"
+            placeholder="Your answer"
+            autocomplete="off"
+          />
+
+          <div class="button-row">
+            <button id="submitButton" class="btn primary">
+              Check
+            </button>
+            <button id="skipButton" class="btn ghost">
+              Skip
+            </button>
+          </div>
+        </div>
+
+        <div id="feedback" class="feedback">
+          Press <strong>Start</strong> to begin.
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+          <div class="stat-pill">
+            ✅ Correct: <span id="correctCount">0</span>
+          </div>
+          <div class="stat-pill">
+            ❌ Wrong: <span id="wrongCount">0</span>
+          </div>
+          <div class="stat-pill">
+            🎯 Streak: <span id="streakCount">0</span>
+          </div>
+          <div class="stat-pill">
+            📊 Accuracy: <span id="accuracy">0%</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Big tick / cross overlay -->
+    <div id="resultOverlay" class="result-overlay hidden">
+      <div id="resultIcon" class="result-icon"></div>
+    </div>
+
+    <script src="game.js"></script>
+  </body>
+</html>
