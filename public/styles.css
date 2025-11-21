@@ -11,6 +11,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  height: 100%; /* helps avoid layout jumps */
 }
 
 /* ================
@@ -62,7 +63,9 @@ body {
   display: none !important;
 }
 
-/* Header */
+/* ================
+   Header
+   ================ */
 .app-header {
   position: sticky;
   top: 0;
@@ -109,7 +112,9 @@ body {
   text-transform: uppercase;
 }
 
-/* Main layout */
+/* ================
+   Main layout
+   ================ */
 .app-main {
   flex: 1;
   display: flex;
@@ -139,7 +144,9 @@ body {
   text-align: center;
 }
 
-/* Controls row */
+/* ================
+   Controls row
+   ================ */
 .controls-row {
   display: flex;
   flex-wrap: wrap;
@@ -176,7 +183,14 @@ body {
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.45);
 }
 
-/* Timed info + digital timer */
+.field-buttons {
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+/* ================
+   Timer
+   ================ */
 .timed-info {
   text-align: center;
   margin-bottom: 0.75rem;
@@ -206,13 +220,28 @@ body {
   box-shadow: 0 0 10px rgba(248, 113, 113, 0.3);
 }
 
-/* Question area */
+/* ================
+   Question area
+   ================ */
 .question-area {
   background: var(--bg-card-soft);
   border-radius: 1.25rem;
-  padding: 1.25rem 1rem;
+  padding: 1.25rem 1rem 1rem;
   border: 1px solid rgba(148, 163, 184, 0.3);
   margin-bottom: 0.75rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.question-area.correct {
+  border-color: var(--success);
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.35);
+}
+
+.question-area.wrong {
+  border-color: var(--danger);
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.35);
+  background-color: rgba(127, 29, 29, 0.35);
 }
 
 .question-pill {
@@ -225,7 +254,7 @@ body {
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
   background: radial-gradient(circle at top, var(--accent-soft), transparent 70%);
-  margin: 0 auto 0.75rem;
+  margin: 0 auto 0.5rem;
 }
 
 .operator,
@@ -233,33 +262,37 @@ body {
   color: var(--accent-strong);
 }
 
-/* Answer input (big + bold) */
-.answer-input {
-  width: 100%;
-  margin-bottom: 0.75rem;
-  padding: 1rem 1rem;
-  border-radius: 1rem;
-  border: 1px solid var(--border-subtle);
-  background: #020617;
-  color: var(--text-main);
-  font-size: 2rem;
+/* Hint below question */
+.question-hint {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-soft);
+  min-height: 1.1rem;
+}
+
+/* Answer BELOW question */
+.answer-wrapper {
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.answer-input-below {
+  width: 80%;
+  max-width: 300px;
+  font-size: 2.4rem;
   font-weight: 700;
+  padding: 0.6rem 0.8rem;
+  border-radius: 1rem;
+  border: 2px solid var(--accent);
+  background: #0f172a;
+  color: var(--text-main);
   text-align: center;
   outline: none;
 }
 
-/* Remove spinners if number ever used */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-input[type="number"] {
-  -moz-appearance: textfield;
-}
-
-/* Buttons */
+/* ================
+   Buttons
+   ================ */
 .button-row {
   display: flex;
   gap: 0.5rem;
@@ -314,7 +347,9 @@ input[type="number"] {
   transform: translateY(-1px);
 }
 
-/* Feedback */
+/* ================
+   Feedback + stats
+   ================ */
 .feedback {
   text-align: center;
   font-size: 0.9rem;
@@ -330,7 +365,6 @@ input[type="number"] {
   color: var(--danger);
 }
 
-/* Stats pills */
 .stats {
   display: flex;
   flex-wrap: wrap;
@@ -347,7 +381,9 @@ input[type="number"] {
   border: 1px solid rgba(148, 163, 184, 0.5);
 }
 
-/* Correct / wrong flash overlay */
+/* ================
+   Big tick / cross overlay
+   ================ */
 .result-overlay {
   position: fixed;
   inset: 0;
@@ -380,7 +416,9 @@ input[type="number"] {
   color: var(--danger);
 }
 
-/* Custom keypad */
+/* ================
+   Keypad
+   ================ */
 .keypad {
   margin: 0.75rem auto 0.75rem;
   max-width: 360px;
@@ -428,7 +466,9 @@ input[type="number"] {
   border-color: rgba(16, 185, 129, 0.7);
 }
 
-/* Mobile tweaks + minimal playing mode */
+/* ================
+   Mobile tweaks + minimal playing mode
+   ================ */
 @media (max-width: 600px) {
   .app-main {
     align-items: stretch;
@@ -449,12 +489,16 @@ input[type="number"] {
     font-size: 1.6rem;
   }
 
+  .answer-input-below {
+    font-size: 2.2rem;
+  }
+
   .keypad button {
     font-size: 1.6rem;
     padding: 0.85rem 0;
   }
 
-  /* When game is running on mobile: show only question + answer + keypad + Stop */
+  /* Mobile playing mode: show only question + answer + keypad + Stop */
   body.playing .app-header,
   body.playing .game-title,
   body.playing .feedback,
@@ -475,5 +519,10 @@ input[type="number"] {
 
   body.playing .question-area {
     margin-top: 0.25rem;
+  }
+
+  /* Prevent bouncing / scrolling while playing */
+  body.playing {
+    overflow: hidden;
   }
 }

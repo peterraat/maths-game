@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <title>Multiplication Trainer</title>
+    <title>Math Trainer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -12,120 +12,119 @@
         <span class="logo-dot"></span>
         <span class="logo-text">Math Trainer</span>
       </div>
-      <button
-        id="contrastToggle"
-        class="contrast-toggle"
-        aria-label="Toggle high contrast"
-      >
-        HC
-      </button>
+      <button id="contrastToggle" class="contrast-toggle">HC</button>
     </header>
 
     <main class="app-main">
       <section class="card game-card">
-        <h1 class="game-title">Multiplication Trainer</h1>
+        <h2 class="game-title">Multiplication Trainer</h2>
 
         <!-- Controls -->
         <div class="controls-row">
-          <label class="field">
+          <div class="field">
             <span class="field-label">Multiplication</span>
             <select id="baseTable" class="field-input">
-              <option value="" selected>Mix 2–20</option>
-              <option value="2">×2 table</option>
-              <option value="3">×3 table</option>
-              <option value="4">×4 table</option>
-              <option value="5">×5 table</option>
-              <option value="6">×6 table</option>
-              <option value="7">×7 table</option>
-              <option value="8">×8 table</option>
-              <option value="9">×9 table</option>
-              <option value="10">×10 table</option>
-              <option value="11">×11 table</option>
-              <option value="12">×12 table</option>
-              <option value="13">×13 table</option>
-              <option value="14">×14 table</option>
-              <option value="15">×15 table</option>
-              <option value="16">×16 table</option>
-              <option value="17">×17 table</option>
-              <option value="18">×18 table</option>
-              <option value="19">×19 table</option>
-              <option value="20">×20 table</option>
+              <option value="">Mix 2–20</option>
+              <option value="2">2 times table</option>
+              <option value="3">3 times table</option>
+              <option value="4">4 times table</option>
+              <option value="5">5 times table</option>
+              <option value="6">6 times table</option>
+              <option value="7">7 times table</option>
+              <option value="8">8 times table</option>
+              <option value="9">9 times table</option>
+              <option value="10">10 times table</option>
             </select>
-          </label>
+          </div>
 
-          <label class="field">
+          <div class="field">
             <span class="field-label">Max number</span>
             <select id="maxTable" class="field-input">
-              <option value="5">Up to 5</option>
-              <option value="10" selected>Up to 10</option>
+              <option value="10">Up to 10</option>
               <option value="12">Up to 12</option>
               <option value="20">Up to 20</option>
             </select>
-          </label>
+          </div>
 
-          <label class="field">
+          <div class="field">
             <span class="field-label">Mode</span>
             <select id="mode" class="field-input">
-              <option value="practice" selected>Practice</option>
+              <option value="practice">Practice</option>
               <option value="timed">Timed (60s)</option>
             </select>
-          </label>
+          </div>
 
-          <button id="startButton" class="btn primary">Start</button>
-          <button id="stopButton" class="btn danger">Stop</button>
+          <div class="field field-buttons">
+            <button id="startButton" class="btn primary">Start</button>
+            <button id="stopButton" class="btn danger">Stop</button>
+          </div>
         </div>
 
-        <!-- Digital timer -->
+        <!-- Timer -->
         <div id="timedInfo" class="timed-info hidden">
-          <span class="timer-label">Time left</span>
+          <div class="timer-label">Time left</div>
           <div id="timeDisplay" class="timer-display">01:00.00</div>
         </div>
 
-        <!-- Question area -->
+        <!-- Question & Answer -->
         <div class="question-area">
           <div class="question-pill">
             <span id="leftOperand">7</span>
-            <span class="operator">×</span>
+            <span class="operator">&times;</span>
             <span id="rightOperand">8</span>
             <span class="equals">=</span>
           </div>
 
-          <!-- Answer display (DIV instead of INPUT: no OS keyboard ever) -->
-          <div
-            id="answerDisplay"
-            class="answer-display"
-            aria-label="Your answer"
-            role="textbox"
-          ></div>
+          <div id="questionHint" class="question-hint"></div>
 
-          <!-- Custom keypad -->
-          <div id="keypad" class="keypad">
-            <button data-key="1">1</button>
-            <button data-key="2">2</button>
-            <button data-key="3">3</button>
-            <button data-key="4">4</button>
-            <button data-key="5">5</button>
-            <button data-key="6">6</button>
-            <button data-key="7">7</button>
-            <button data-key="8">8</button>
-            <button data-key="9">9</button>
-            <button data-key="clear" class="keypad-func">Clear</button>
-            <button data-key="0">0</button>
-            <button data-key="back" class="keypad-func">⌫</button>
-            <button data-key="enter" class="keypad-enter">Enter</button>
-          </div>
-
-          <div class="button-row">
-            <button id="submitButton" class="btn primary">Check</button>
-            <button id="skipButton" class="btn ghost">Skip</button>
+          <div class="answer-wrapper">
+            <input
+              id="answerInput"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              class="answer-input-below"
+              placeholder="Your answer"
+            />
           </div>
         </div>
 
-        <div id="feedback" class="feedback">
-          Press <strong>Start</strong> to begin.
+        <!-- Keypad -->
+        <div id="keypad" class="keypad">
+          <button type="button" data-key="1">1</button>
+          <button type="button" data-key="2">2</button>
+          <button type="button" data-key="3">3</button>
+
+          <button type="button" data-key="4">4</button>
+          <button type="button" data-key="5">5</button>
+          <button type="button" data-key="6">6</button>
+
+          <button type="button" data-key="7">7</button>
+          <button type="button" data-key="8">8</button>
+          <button type="button" data-key="9">9</button>
+
+          <button type="button" data-key="clear" class="keypad-func">Clear</button>
+          <button type="button" data-key="0">0</button>
+          <button type="button" data-key="back" class="keypad-func">⌫</button>
+
+          <button
+            type="button"
+            data-key="enter"
+            class="keypad-func keypad-enter"
+          >
+            Enter
+          </button>
         </div>
 
-        <!-- Stats -->
+        <!-- Check / Skip -->
+        <div class="button-row">
+          <button id="submitButton" class="btn ghost">Check</button>
+          <button id="skipButton" class="btn ghost">Skip</button>
+        </div>
+
+        <!-- Feedback & Stats -->
+        <div id="feedback" class="feedback">Press Start to begin.</div>
+
         <div class="stats">
           <div class="stat-pill">
             ✅ Correct: <span id="correctCount">0</span>
