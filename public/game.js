@@ -17,6 +17,7 @@
   const accuracyEl = document.getElementById("accuracy");
   const timedInfoEl = document.getElementById("timedInfo");
   const timeDisplayEl = document.getElementById("timeDisplay");
+  const keypadEl = document.getElementById("keypad");
 
   const resultOverlay = document.getElementById("resultOverlay");
   const resultIcon = document.getElementById("resultIcon");
@@ -30,6 +31,15 @@
   let timerId = null;
   let remainingMs = 60000; // 60 seconds
   let overlayTimeout = null;
+
+  const isMobile =
+    /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    window.innerWidth <= 600;
+
+  // On mobile, try to prevent the OS keyboard
+  if (isMobile) {
+    answerInput.setAttribute("inputmode", "none");
+  }
 
   function randInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -122,8 +132,10 @@
     rightOperandEl.textContent = b;
 
     answerInput.value = "";
-    answerInput.focus();
-    setFeedback("Type your answer and press Enter or Check.");
+    if (!isMobile) {
+      answerInput.focus();
+    }
+    setFeedback("Type your answer or use the keypad, then press Enter or Check.");
   }
 
   function handleCorrect() {
@@ -186,6 +198,7 @@
         updateTimeDisplay();
         stopTimer();
         isRunning = false;
+        document.body.classList.remove("playing");
         setFeedback(
           `Time up! ✅ ${correct} correct, ❌ ${wrong} wrong. Accuracy: ${accuracyEl.textContent}`
         );
@@ -221,7 +234,6 @@
 
     timedInfoEl.classList.add("hidden");
 
-    // Hide overlay if it was mid-animation
     if (overlayTimeout) {
       clearTimeout(overlayTimeout);
       overlayTimeout = null;
@@ -230,6 +242,8 @@
       resultIcon.classList.remove("show", "correct-flash", "wrong-flash");
       resultOverlay.classList.add("hidden");
     }
+
+    document.body.classList.remove("playing");
   }
 
   function startGame() {
@@ -241,10 +255,34 @@
     } else {
       timedInfoEl.classList.add("hidden");
       stopTimer();
+      remainingMs = 60000;
+      updateTimeDisplay();
     }
 
+    document.body.classList.add("playing");
     setFeedback("Game started. Good luck! 🎯");
     nextQuestion();
+  }
+
+  // --- Custom keypad handler ---
+  if (keypadEl) {
+    keypadEl.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      const key = btn.dataset.key;
+      if (!key) return;
+
+      if (key === "back") {
+        answerInput.value = answerInput.value.slice(0, -1);
+      } else if (key === "clear") {
+        answerInput.value = "";
+      } else if (key === "enter") {
+        submitAnswer();
+      } else {
+        // 0-9
+        answerInput.value += key;
+      }
+    });
   }
 
   // Event listeners
@@ -279,7 +317,6 @@
 
   // Start in idle state
   updateStats();
-  // Ensure timer shows default on load
   updateTimeDisplay();
   setFeedback("Press Start to begin.");
 })();

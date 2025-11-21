@@ -85,14 +85,31 @@
             <span class="equals">=</span>
           </div>
 
+          <!-- Answer box (we’ll use our own keypad on mobile) -->
           <input
             id="answerInput"
-            type="number"
-            inputmode="numeric"
+            type="text"
             class="answer-input"
             placeholder="Your answer"
             autocomplete="off"
           />
+
+          <!-- Custom keypad (shown on mobile) -->
+          <div id="keypad" class="keypad">
+            <button data-key="1">1</button>
+            <button data-key="2">2</button>
+            <button data-key="3">3</button>
+            <button data-key="4">4</button>
+            <button data-key="5">5</button>
+            <button data-key="6">6</button>
+            <button data-key="7">7</button>
+            <button data-key="8">8</button>
+            <button data-key="9">9</button>
+            <button data-key="clear" class="keypad-func">Clear</button>
+            <button data-key="0">0</button>
+            <button data-key="back" class="keypad-func">⌫</button>
+            <button data-key="enter" class="keypad-enter">Enter</button>
+          </div>
 
           <div class="button-row">
             <button id="submitButton" class="btn primary">

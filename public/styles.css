@@ -203,30 +203,30 @@ body {
   color: var(--accent-strong);
 }
 
+/* Answer input (big + bold) */
 .answer-input {
   width: 100%;
   margin-bottom: 0.75rem;
-
-  /* Bigger input box */
   padding: 1rem 1rem;
   border-radius: 1rem;
-
   border: 1px solid var(--border-subtle);
   background: #020617;
-
-  /* Big bold text */
   color: var(--text-main);
   font-size: 2rem;
   font-weight: 700;
-
   text-align: center;
   outline: none;
 }
 
+/* Remove spinner arrows just in case some browser still shows them */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
 
-.answer-input:focus {
-  border-color: var(--accent-strong);
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 /* Buttons */
@@ -272,7 +272,7 @@ body {
   color: var(--accent-strong);
 }
 
-/* NEW: Stop button */
+/* Stop button */
 .btn.danger {
   background: linear-gradient(135deg, #b91c1c, #ef4444);
   color: #fee2e2;
@@ -350,8 +350,47 @@ body {
   color: var(--danger);
 }
 
-/* Mobile tweaks */
-@media (max-width: 480px) {
+/* Custom keypad (mobile) */
+.keypad {
+  display: none; /* hidden on desktop by default */
+  margin: 0.5rem auto 0.5rem;
+  max-width: 320px;
+  gap: 0.4rem;
+}
+
+.keypad button {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-subtle);
+  background: #020617;
+  color: var(--text-main);
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding: 0.55rem 0;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.1s ease;
+}
+
+.keypad button:active {
+  transform: translateY(1px);
+}
+
+.keypad-func {
+  font-size: 0.9rem;
+}
+
+.keypad-enter {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #0f766e, #22c55e);
+  border-color: rgba(16, 185, 129, 0.7);
+}
+
+/* Layout for keypad grid on small screens */
+@media (max-width: 600px) {
+  .app-main {
+    align-items: stretch;
+    padding: 0.75rem;
+  }
+
   .game-card {
     padding: 1.25rem 1rem 1rem;
     border-radius: 1.25rem;
@@ -359,21 +398,20 @@ body {
 
   .game-title {
     font-size: 1.2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Hide header while playing to gain space */
+  body.playing .app-header {
+    display: none;
   }
 
   .question-pill {
     font-size: 1.6rem;
   }
-}
 
-/* Remove spinner arrows (Chrome, Edge, Safari) */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Remove spinner arrows (Firefox) */
-input[type="number"] {
-  -moz-appearance: textfield;
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
