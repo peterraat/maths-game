@@ -1,397 +1,268 @@
-/* Reset */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+/* ---------------------------------------------------------
+   GLOBAL BASE STYLES
+--------------------------------------------------------- */
+:root {
+  --bg: #0f1226;
+  --card: #1a1f36;
+  --card-soft: rgba(255, 255, 255, 0.05);
+  --primary: #4cc9f0;
+  --primary-glow: #4cc9f055;
+  --white: #f8f8ff;
+  --green: #00c851;
+  --red: #ff4d4d;
+
+  /* High-contrast mode (toggle with JS) */
+  --hc-bg: #000;
+  --hc-text: #fff;
+  --hc-accent: #ff0;
 }
-html,
+
+body.high-contrast {
+  background: var(--hc-bg) !important;
+  color: var(--hc-text) !important;
+}
+
 body {
+  font-family: system-ui, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--white);
   margin: 0;
-  padding: 0;
+  overflow-x: hidden;
 }
 
-/* Theme */
-html[data-theme="dark"] {
-  --bg-main: radial-gradient(circle at top, #111827 0, #020617 45%, #020617 100%);
-  --bg-header: rgba(15, 23, 42, 0.95);
-  --bg-card: rgba(15, 23, 42, 0.98);
-  --bg-card-soft: rgba(15, 23, 42, 0.9);
-  --border-subtle: rgba(148, 163, 184, 0.35);
-  --accent: #38bdf8;
-  --accent-soft: rgba(56, 189, 248, 0.12);
-  --accent-strong: #0ea5e9;
-  --text-main: #e5e7eb;
-  --text-soft: #9ca3af;
-  --danger: #f97373;
-  --success: #4ade80;
-  --pill-bg: rgba(15, 23, 42, 0.9);
-}
-html.high-contrast {
-  --bg-main: #000;
-  --bg-header: #000;
-  --bg-card: #000;
-  --bg-card-soft: #000;
-  --border-subtle: #fff;
-  --accent: #fff;
-  --accent-soft: rgba(255, 255, 255, 0.08);
-  --accent-strong: #fff;
-  --text-main: #fff;
-  --text-soft: #facc15;
-  --danger: #ff0000;
-  --success: #00ff00;
-  --pill-bg: #000;
-}
-body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--bg-main);
-  color: var(--text-main);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.hidden {
-  display: none !important;
-}
-
-/* Header */
+/* ---------------------------------------------------------
+   HEADER
+--------------------------------------------------------- */
 .app-header {
+  padding: 1rem;
+  text-align: center;
+  background: var(--card);
   position: sticky;
   top: 0;
-  z-index: 10;
-  background: var(--bg-header);
-  border-bottom: 1px solid var(--border-subtle);
-  padding: 0.75rem 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-}
-.logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.logo-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--accent-strong);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.7);
-}
-.logo-text {
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 0.78rem;
-  color: var(--text-soft);
-}
-.contrast-toggle {
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-card-soft);
-  color: var(--text-soft);
-  padding: 0.25rem 0.6rem;
-  font-size: 0.7rem;
-  cursor: pointer;
-  text-transform: uppercase;
+  z-index: 6;
 }
 
-/* Layout */
+.app-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------
+   MAIN LAYOUT
+--------------------------------------------------------- */
 .app-main {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  max-width: 640px;
+  margin: auto;
   padding: 1.5rem;
 }
-.card {
-  background: var(--bg-card);
-  border-radius: 1.5rem;
-  border: 1px solid var(--border-subtle);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
-}
+
+/* ---------------------------------------------------------
+   CARD
+--------------------------------------------------------- */
 .game-card {
-  width: 100%;
-  max-width: 520px;
-  padding: 1.75rem 1.5rem 1.5rem;
+  background: var(--card);
+  padding: 1.5rem 1.25rem;
+  border-radius: 1.4rem;
+  box-shadow: 0 0 25px rgba(0,0,0,0.4);
 }
+
+/* ---------------------------------------------------------
+   TITLE
+--------------------------------------------------------- */
 .game-title {
-  font-size: 1.35rem;
-  margin: 0 0 1.25rem 0;
-  text-align: center;
-}
-
-/* Controls */
-.controls-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: flex-end;
-  justify-content: center;
-  margin-bottom: 0.75rem;
-}
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 120px;
-}
-.field-label {
-  font-size: 0.8rem;
-  color: var(--text-soft);
-}
-.field-input {
-  background: var(--bg-card-soft);
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-main);
-  padding: 0.45rem 0.85rem;
-  font-size: 0.9rem;
-  outline: none;
-}
-.field-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.45);
-}
-
-/* Timer */
-.timed-info {
-  text-align: center;
-  margin-bottom: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-}
-.timer-label {
-  font-size: 0.8rem;
-  color: var(--text-soft);
-}
-.timer-display {
-  font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Lucida Console", monospace;
-  font-size: 1.2rem;
-  padding: 0.2rem 0.7rem;
-  border-radius: 0.5rem;
-  background: #111827;
-  color: #f87171;
-  letter-spacing: 0.08em;
-  min-width: 120px;
-  text-align: center;
-  border: 1px solid rgba(248, 113, 113, 0.4);
-  box-shadow: 0 0 10px rgba(248, 113, 113, 0.3);
-}
-
-/* Question area */
-.question-area {
-  background: var(--bg-card-soft);
-  border-radius: 1.25rem;
-  padding: 1.25rem 1rem;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  margin-bottom: 0.75rem;
-}
-.question-pill {
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 0.4rem;
-  font-size: 1.8rem;
-  font-weight: 600;
-  padding: 0.45rem 0.9rem;
-  border-radius: 999px;
-  background: radial-gradient(circle at top, var(--accent-soft), transparent 70%);
-  margin: 0 auto 0.75rem;
-}
-.operator,
-.equals {
-  color: var(--accent-strong);
-}
-
-/* Answer display (no input, so no OS keyboard) */
-.answer-display {
-  width: 100%;
-  margin-bottom: 0.75rem;
-  padding: 1rem 1rem;
-  border-radius: 1rem;
-  border: 1px solid var(--border-subtle);
-  background: #020617;
-  color: var(--text-main);
-  font-size: 2rem;
-  font-weight: 700;
-  text-align: center;
-  min-height: 2.4rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Buttons */
-.button-row {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-}
-.btn {
-  border-radius: 999px;
-  border: 1px solid transparent;
-  padding: 0.45rem 1rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 90px;
-}
-.btn.primary {
-  background: linear-gradient(135deg, #0f766e, #22c55e);
-  color: #ecfdf3;
-  border-color: rgba(16, 185, 129, 0.7);
-}
-.btn.primary:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-}
-.btn.ghost {
-  background: transparent;
-  border-color: var(--border-subtle);
-  color: var(--text-soft);
-}
-.btn.ghost:hover {
-  border-color: var(--accent);
-  color: var(--accent-strong);
-}
-.btn.danger {
-  background: linear-gradient(135deg, #b91c1c, #ef4444);
-  color: #fee2e2;
-  border-color: rgba(239, 68, 68, 0.6);
-}
-.btn.danger:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-}
-
-/* Feedback / stats */
-.feedback {
-  text-align: center;
-  font-size: 0.9rem;
-  margin-top: 0.85rem;
-  min-height: 1.2rem;
-}
-.feedback.correct {
-  color: var(--success);
-}
-.feedback.wrong {
-  color: var(--danger);
-}
-.stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  justify-content: center;
-  margin-top: 1rem;
-  font-size: 0.8rem;
-}
-.stat-pill {
-  background: var(--pill-bg);
-  border-radius: 999px;
-  padding: 0.3rem 0.75rem;
-  border: 1px solid rgba(148, 163, 184, 0.5);
-}
-
-/* Overlay tick/cross */
-.result-overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 50;
-}
-.result-icon {
-  font-size: 5rem;
-  font-weight: 700;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  text-shadow: 0 0 18px rgba(0, 0, 0, 0.8);
-}
-.result-icon.show {
-  opacity: 1;
-  transform: scale(1);
-}
-.result-icon.correct-flash {
-  color: var(--success);
-}
-.result-icon.wrong-flash {
-  color: var(--danger);
-}
-
-/* Keypad */
-.keypad {
-  margin: 0.75rem auto 0.75rem;
-  max-width: 360px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  opacity: 0;
-  transform: translateY(30px);
-  max-height: 0;
-  overflow: hidden;
-  transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.25s ease;
-}
-.keypad.keypad-visible {
-  opacity: 1;
-  transform: translateY(0);
-  max-height: 400px;
-}
-.keypad button {
-  border-radius: 0.9rem;
-  border: 1px solid var(--border-subtle);
-  background: #020617;
-  color: var(--text-main);
   font-size: 1.4rem;
   font-weight: 600;
-  padding: 0.75rem 0;
-  cursor: pointer;
-  transition: background 0.12s ease, transform 0.1s ease, box-shadow 0.1s ease;
-}
-.keypad button:active {
-  transform: translateY(1px);
-  box-shadow: 0 0 0 1px var(--accent-soft);
-}
-.keypad-func {
-  font-size: 0.9rem;
-}
-.keypad-enter {
-  grid-column: 1 / -1;
-  background: linear-gradient(135deg, #0f766e, #22c55e);
-  border-color: rgba(16, 185, 129, 0.7);
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
-/* Mobile */
+/* ---------------------------------------------------------
+   QUESTION AREA
+--------------------------------------------------------- */
+.question-area {
+  text-align: center;
+  margin-bottom: 1.2rem;
+}
+
+.question-pill {
+  font-size: 2rem;
+  background: var(--card-soft);
+  padding: 1rem 1.4rem;
+  border-radius: 0.8rem;
+  display: inline-block;
+}
+
+/* ---------------------------------------------------------
+   ANSWER INPUT
+--------------------------------------------------------- */
+.answer-input {
+  width: 90%;
+  margin: 0.5rem auto 1.5rem;
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  padding: 0.75rem;
+  text-align: center;
+  border-radius: 0.8rem;
+  border: 2px solid var(--primary);
+  background: #111529;
+  color: var(--white);
+  outline: none;
+}
+
+/* ---------------------------------------------------------
+   KEYPAD
+--------------------------------------------------------- */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  margin-bottom: 1rem;
+
+  /* Slide-up animation */
+  transform: translateY(60px);
+  opacity: 0;
+  animation: slideUp 0.45s ease-out forwards;
+}
+
+@keyframes slideUp {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.keypad button {
+  font-size: 1.8rem;
+  padding: 1rem 0;
+  background: var(--card-soft);
+  border: 2px solid var(--primary);
+  color: var(--white);
+  border-radius: 0.75rem;
+  transition: all 0.15s ease;
+}
+
+.keypad button:active {
+  background: var(--primary);
+  transform: scale(0.97);
+}
+
+/* Auto-centered keypad wrappers */
+.keypad-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* ---------------------------------------------------------
+   CONTROLS
+--------------------------------------------------------- */
+.controls-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.button-primary {
+  background: var(--green);
+  padding: 0.7rem 1.2rem;
+  border-radius: 0.7rem;
+  font-size: 1rem;
+  border: none;
+  color: white;
+}
+
+.button-stop {
+  background: var(--red);
+  padding: 0.7rem 1.2rem;
+  border-radius: 0.7rem;
+  font-size: 1rem;
+  border: none;
+  color: white;
+}
+
+/* ---------------------------------------------------------
+   FEEDBACK (GREEN TICK / RED X)
+--------------------------------------------------------- */
+.feedback {
+  height: 2.2rem;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.feedback.correct {
+  color: var(--green);
+  animation: flashGreen 0.25s ease;
+}
+
+.feedback.wrong {
+  color: var(--red);
+  animation: flashRed 0.25s ease;
+}
+
+@keyframes flashGreen {
+  0% { transform: scale(1); opacity: 0.2; }
+  100% { transform: scale(1.4); opacity: 1; }
+}
+
+@keyframes flashRed {
+  0% { transform: scale(1); opacity: 0.2; }
+  100% { transform: scale(1.4); opacity: 1; }
+}
+
+/* ---------------------------------------------------------
+   MOBILE: PLAY MODE MINIMAL UI
+--------------------------------------------------------- */
 @media (max-width: 600px) {
-  .app-main {
-    align-items: stretch;
-    padding: 0.75rem;
-  }
-  .game-card {
-    padding: 1.25rem 1rem 1rem;
-    border-radius: 1.25rem;
-  }
-  .game-title {
-    font-size: 1.2rem;
-    margin-bottom: 0.75rem;
-  }
-  .question-pill {
-    font-size: 1.6rem;
-  }
-  body.playing .app-header {
+
+  body.playing .app-header,
+  body.playing .game-title,
+  body.playing .feedback,
+  body.playing .stats,
+  body.playing .timed-info,
+  body.playing .field {
     display: none;
   }
-  .keypad button {
-    font-size: 1.6rem;
-    padding: 0.85rem 0;
+
+  /* Only keep Stop button visible */
+  body.playing .controls-row {
+    justify-content: center;
+    margin-bottom: 0.4rem;
   }
+
+  body.playing #startButton {
+    display: none;
+  }
+
+  .game-card {
+    padding: 1rem;
+  }
+
+  .question-pill {
+    font-size: 1.8rem;
+  }
+
+  .answer-input {
+    font-size: 2.2rem;
+  }
+
+  .keypad button {
+    font-size: 2rem;
+    padding: 1.1rem 0;
+  }
+}
+
+/* ---------------------------------------------------------
+   HIGH CONTRAST OVERRIDES
+--------------------------------------------------------- */
+body.high-contrast .question-pill,
+body.high-contrast .answer-input,
+body.high-contrast .keypad button,
+body.high-contrast .game-card {
+  background: #000 !important;
+  color: #fff !important;
+  border-color: #ff0 !important;
 }
