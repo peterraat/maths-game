@@ -32,6 +32,23 @@ html[data-theme="dark"] {
   --pill-bg: rgba(15, 23, 42, 0.9);
 }
 
+/* High contrast mode overrides */
+html.high-contrast {
+  --bg-main: #000000;
+  --bg-header: #000000;
+  --bg-card: #000000;
+  --bg-card-soft: #000000;
+  --border-subtle: #ffffff;
+  --accent: #ffffff;
+  --accent-soft: rgba(255, 255, 255, 0.08);
+  --accent-strong: #ffffff;
+  --text-main: #ffffff;
+  --text-soft: #facc15;
+  --danger: #ff0000;
+  --success: #00ff00;
+  --pill-bg: #000000;
+}
+
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--bg-main);
@@ -42,7 +59,7 @@ body {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 /* Header */
@@ -56,6 +73,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.75rem;
 }
 
 .logo {
@@ -77,6 +95,18 @@ body {
   text-transform: uppercase;
   font-size: 0.78rem;
   color: var(--text-soft);
+}
+
+/* High contrast toggle button */
+.contrast-toggle {
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-soft);
+  color: var(--text-soft);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  text-transform: uppercase;
 }
 
 /* Main layout */
@@ -218,7 +248,7 @@ body {
   outline: none;
 }
 
-/* Remove spinner arrows just in case some browser still shows them */
+/* Remove spinners if number ever used */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -350,28 +380,42 @@ input[type="number"] {
   color: var(--danger);
 }
 
-/* Custom keypad (mobile) */
+/* Custom keypad */
 .keypad {
-  display: none; /* hidden on desktop by default */
-  margin: 0.5rem auto 0.5rem;
-  max-width: 320px;
-  gap: 0.4rem;
+  margin: 0.75rem auto 0.75rem;
+  max-width: 360px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  opacity: 0;
+  transform: translateY(30px);
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.25s ease;
+}
+
+/* Slide-up visible state */
+.keypad.keypad-visible {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 400px;
 }
 
 .keypad button {
-  border-radius: 0.75rem;
+  border-radius: 0.9rem;
   border: 1px solid var(--border-subtle);
   background: #020617;
   color: var(--text-main);
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   font-weight: 600;
-  padding: 0.55rem 0;
+  padding: 0.75rem 0;
   cursor: pointer;
-  transition: background 0.12s ease, transform 0.1s ease;
+  transition: background 0.12s ease, transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 .keypad button:active {
   transform: translateY(1px);
+  box-shadow: 0 0 0 1px var(--accent-soft);
 }
 
 .keypad-func {
@@ -384,7 +428,7 @@ input[type="number"] {
   border-color: rgba(16, 185, 129, 0.7);
 }
 
-/* Layout for keypad grid on small screens */
+/* Mobile tweaks */
 @media (max-width: 600px) {
   .app-main {
     align-items: stretch;
@@ -401,17 +445,17 @@ input[type="number"] {
     margin-bottom: 0.75rem;
   }
 
+  .question-pill {
+    font-size: 1.6rem;
+  }
+
   /* Hide header while playing to gain space */
   body.playing .app-header {
     display: none;
   }
 
-  .question-pill {
+  .keypad button {
     font-size: 1.6rem;
-  }
-
-  .keypad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    padding: 0.85rem 0;
   }
 }

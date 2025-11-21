@@ -18,6 +18,7 @@
   const timedInfoEl = document.getElementById("timedInfo");
   const timeDisplayEl = document.getElementById("timeDisplay");
   const keypadEl = document.getElementById("keypad");
+  const contrastToggle = document.getElementById("contrastToggle");
 
   const resultOverlay = document.getElementById("resultOverlay");
   const resultIcon = document.getElementById("resultIcon");
@@ -33,14 +34,61 @@
   let overlayTimeout = null;
 
   const isMobile =
-    /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    /Mobi|Android|iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
     window.innerWidth <= 600;
 
-  // On mobile, try to prevent the OS keyboard
-  if (isMobile) {
-    answerInput.setAttribute("inputmode", "none");
+  // --- Audio and vibration helpers ---
+  let audioCtx = null;
+
+  function getAudioContext() {
+    if (!audioCtx) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        audioCtx = null;
+      }
+    }
+    return audioCtx;
   }
 
+  function playTone(freq, duration, gainValue = 0.2) {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = freq;
+    osc.type = "sine";
+    gain.gain.value = gainValue;
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    setTimeout(() => {
+      osc.stop();
+    }, duration);
+  }
+
+  function playClickSound() {
+    playTone(800, 60, 0.12);
+  }
+
+  function playSuccessSound() {
+    playTone(900, 120, 0.2);
+    setTimeout(() => playTone(1200, 120, 0.2), 100);
+  }
+
+  function playFailSound() {
+    playTone(200, 160, 0.22);
+  }
+
+  function vibrate(pattern) {
+    if (navigator.vibrate) {
+      navigator.vibrate(pattern);
+    }
+  }
+
+  // --- Core helpers ---
   function randInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
@@ -134,6 +182,8 @@
     answerInput.value = "";
     if (!isMobile) {
       answerInput.focus();
+    } else {
+      answerInput.blur();
     }
     setFeedback("Type your answer or use the keypad, then press Enter or Check.");
   }
@@ -143,6 +193,8 @@
     streak += 1;
     setFeedback("Nice! ✅", "correct");
     flashResult("correct");
+    playSuccessSound();
+    vibrate(60);
     updateStats();
     nextQuestion();
   }
@@ -155,6 +207,8 @@
       "wrong"
     );
     flashResult("wrong");
+    playFailSound();
+    vibrate([40, 40, 40]);
     updateStats();
     nextQuestion();
   }
@@ -244,6 +298,9 @@
     }
 
     document.body.classList.remove("playing");
+    if (keypadEl) {
+      keypadEl.classList.remove("keypad-visible");
+    }
   }
 
   function startGame() {
@@ -260,6 +317,14 @@
     }
 
     document.body.classList.add("playing");
+    if (keypadEl) {
+      keypadEl.classList.add("keypad-visible");
+    }
+    if (isMobile) {
+      answerInput.blur();
+    } else {
+      answerInput.focus();
+    }
     setFeedback("Game started. Good luck! 🎯");
     nextQuestion();
   }
@@ -271,6 +336,10 @@
       if (!btn) return;
       const key = btn.dataset.key;
       if (!key) return;
+
+      // Click sound + light vibrate for any press
+      playClickSound();
+      vibrate(20);
 
       if (key === "back") {
         answerInput.value = answerInput.value.slice(0, -1);
@@ -285,7 +354,15 @@
     });
   }
 
-  // Event listeners
+  // --- High contrast toggle ---
+  if (contrastToggle) {
+    contrastToggle.addEventListener("click", () => {
+      const html = document.documentElement;
+      html.classList.toggle("high-contrast");
+    });
+  }
+
+  // --- Event listeners ---
   startButton.addEventListener("click", () => {
     startGame();
   });
@@ -305,15 +382,38 @@
     updateStats();
     setFeedback(`Skipped. The answer was ${currentAnswer}.`, "wrong");
     flashResult("wrong");
+    playFailSound();
+    vibrate([40, 40]);
     nextQuestion();
   });
 
+  // Desktop keyboard input support
   answerInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       submitAnswer();
     }
   });
+
+  window.addEventListener("keydown", (e) => {
+    if (!isRunning) return;
+    if (e.key >= "0" && e.key <= "9" && !isMobile) {
+      answerInput.value += e.key;
+    } else if (e.key === "Backspace" && !isMobile) {
+      answerInput.value = answerInput.value.slice(0, -1);
+    } else if (e.key === "Enter") {
+      submitAnswer();
+    }
+  });
+
+  // Configure input for mobile vs desktop to control keyboards
+  if (isMobile) {
+    answerInput.setAttribute("readonly", "true");
+    answerInput.setAttribute("inputmode", "none");
+  } else {
+    answerInput.removeAttribute("readonly");
+    answerInput.setAttribute("inputmode", "numeric");
+  }
 
   // Start in idle state
   updateStats();

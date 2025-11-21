@@ -12,6 +12,9 @@
         <span class="logo-dot"></span>
         <span class="logo-text">Math Trainer</span>
       </div>
+      <button id="contrastToggle" class="contrast-toggle" aria-label="Toggle high contrast">
+        HC
+      </button>
     </header>
 
     <main class="app-main">
@@ -85,16 +88,17 @@
             <span class="equals">=</span>
           </div>
 
-          <!-- Answer box (we’ll use our own keypad on mobile) -->
+          <!-- Answer box (readonly on mobile so no Samsung keyboard) -->
           <input
             id="answerInput"
             type="text"
             class="answer-input"
             placeholder="Your answer"
             autocomplete="off"
+            readonly
           />
 
-          <!-- Custom keypad (shown on mobile) -->
+          <!-- Custom keypad -->
           <div id="keypad" class="keypad">
             <button data-key="1">1</button>
             <button data-key="2">2</button>
