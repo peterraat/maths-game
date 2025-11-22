@@ -183,6 +183,29 @@
     }
   }
 
+  // Clear the visible question (for initial state / reset)
+  function clearDisplayQuestion() {
+    if (leftOperandEl) leftOperandEl.textContent = "";
+    if (rightOperandEl) rightOperandEl.textContent = "";
+    if (resultOperandEl) resultOperandEl.textContent = "";
+    // Keep operator as-is so layout doesn't jump, but no numbers are shown
+  }
+
+  // Build a string like '7 × 8' or 'X + 3 = 9' for messages
+  function getCurrentQuestionString() {
+    const left = leftOperandEl?.textContent || "?";
+    const right = rightOperandEl?.textContent || "?";
+    const op = operatorEl?.textContent || "?";
+    const result = resultOperandEl?.textContent || "";
+
+    if (gameType === "algebra") {
+      const eqRight = result || "?";
+      return `${left} ${op} ${right} = ${eqRight}`;
+    } else {
+      return `${left} ${op} ${right}`;
+    }
+  }
+
   // --- Algebra question generator ---
   function generateAlgebraQuestion() {
     const difficulty = algebraDifficultySelect
@@ -289,7 +312,6 @@
       rightOperandEl.textContent = b;
       if (operatorEl) operatorEl.textContent = "×";
       if (resultOperandEl) resultOperandEl.textContent = "";
-
     } else {
       // Algebra
       const q = generateAlgebraQuestion();
@@ -331,13 +353,21 @@
     nextQuestion();
   }
 
-  function handleWrong(userValue) {
+  function handleWrong(userValue, { reason = "wrong" } = {}) {
     wrong += 1;
     streak = 0;
-    setFeedback(
-      `Not quite. You said ${userValue}, correct is ${currentAnswer}.`,
-      "wrong"
-    );
+
+    const questionString = getCurrentQuestionString();
+
+    if (reason === "skip") {
+      setFeedback(`Skipped. The answer was ${currentAnswer}.`, "wrong");
+    } else {
+      setFeedback(
+        `Not quite. You said ${userValue}, correct is ${currentAnswer}.`,
+        "wrong"
+      );
+    }
+
     flashResult("wrong");
     playFailSound();
     vibrate([40, 40, 40]);
@@ -347,11 +377,16 @@
       questionAreaEl.classList.add("wrong");
     }
     if (questionHintEl) {
-      questionHintEl.textContent = `Correct answer is ${currentAnswer}`;
+      questionHintEl.textContent = `The correct answer for "${questionString}" is ${currentAnswer}`;
     }
 
     updateStats();
-    nextQuestion();
+
+    // Give time for the user to read the correct answer before next question
+    setTimeout(() => {
+      clearQuestionState();
+      nextQuestion();
+    }, 1400); // ~1.4 seconds
   }
 
   function submitAnswer() {
@@ -369,7 +404,7 @@
     if (value === currentAnswer) {
       handleCorrect(value);
     } else {
-      handleWrong(value);
+      handleWrong(value, { reason: "wrong" });
     }
   }
 
@@ -412,7 +447,7 @@
     updateStats();
   }
 
-  // FULL reset for Stop button
+  // FULL reset for Stop button / mode changes
   function resetEverything() {
     isRunning = false;
     stopTimer();
@@ -430,6 +465,7 @@
 
     timedInfoEl.classList.add("hidden");
     clearQuestionState();
+    clearDisplayQuestion();
 
     if (overlayTimeout) {
       clearTimeout(overlayTimeout);
@@ -505,6 +541,7 @@
     }
 
     clearQuestionState();
+    clearDisplayQuestion();
     answerInput.value = "";
     setFeedback(
       type === "algebra"
@@ -559,21 +596,7 @@
 
   skipButton.addEventListener("click", () => {
     if (!isRunning) return;
-    streak = 0;
-    wrong += 1;
-    updateStats();
-    if (questionAreaEl) {
-      questionAreaEl.classList.remove("correct");
-      questionAreaEl.classList.add("wrong");
-    }
-    if (questionHintEl) {
-      questionHintEl.textContent = `Skipped. Correct answer is ${currentAnswer}`;
-    }
-    setFeedback(`Skipped. The answer was ${currentAnswer}.`, "wrong");
-    flashResult("wrong");
-    playFailSound();
-    vibrate([40, 40]);
-    nextQuestion();
+    handleWrong("skipped", { reason: "skip" });
   });
 
   // Desktop keyboard input support
@@ -614,10 +637,11 @@
     setGameType("algebra");
   });
 
-  // Start in idle state
+  // Start in idle state: no question visible
   updateStats();
   updateTimeDisplay();
   setGameType("multiplication");
+  clearDisplayQuestion();
   setFeedback("Press Start to begin.");
   clearQuestionState();
 })();
