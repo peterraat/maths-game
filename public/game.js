@@ -2,14 +2,20 @@
 (() => {
   const leftOperandEl = document.getElementById("leftOperand");
   const rightOperandEl = document.getElementById("rightOperand");
+  const resultOperandEl = document.getElementById("resultOperand");
+  const operatorEl = document.querySelector(".operator");
+
   const answerInput = document.getElementById("answerInput");
   const submitButton = document.getElementById("submitButton");
   const skipButton = document.getElementById("skipButton");
   const startButton = document.getElementById("startButton");
   const stopButton = document.getElementById("stopButton");
+
   const maxTableSelect = document.getElementById("maxTable");
   const modeSelect = document.getElementById("mode");
   const baseTableSelect = document.getElementById("baseTable");
+  const algebraDifficultySelect = document.getElementById("algebraDifficulty");
+
   const feedbackEl = document.getElementById("feedback");
   const correctCountEl = document.getElementById("correctCount");
   const wrongCountEl = document.getElementById("wrongCount");
@@ -25,6 +31,9 @@
   const questionAreaEl = document.querySelector(".question-area");
   const questionHintEl = document.getElementById("questionHint");
 
+  const modeMultiplicationBtn = document.getElementById("modeMultiplication");
+  const modeAlgebraBtn = document.getElementById("modeAlgebra");
+
   let correct = 0;
   let wrong = 0;
   let streak = 0;
@@ -34,6 +43,7 @@
   let timerId = null;
   let remainingMs = 60000; // 60 seconds
   let overlayTimeout = null;
+  let gameType = "multiplication"; // 'multiplication' | 'algebra'
 
   const isMobile =
     /Mobi|Android|iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
@@ -173,33 +183,125 @@
     }
   }
 
+  // --- Algebra question generator ---
+  function generateAlgebraQuestion() {
+    const difficulty = algebraDifficultySelect
+      ? algebraDifficultySelect.value
+      : "easy";
+
+    let allowedOps;
+    let maxBase;
+
+    if (difficulty === "easy") {
+      allowedOps = ["+"]; // only addition
+      maxBase = 10;
+    } else if (difficulty === "medium") {
+      allowedOps = ["+", "-"];
+      maxBase = 20;
+    } else {
+      allowedOps = ["+", "-", "×"];
+      maxBase = 30;
+    }
+
+    const op = allowedOps[randInt(0, allowedOps.length - 1)];
+    let a, b, c;
+
+    if (op === "+") {
+      a = randInt(1, maxBase);
+      b = randInt(1, maxBase);
+      c = a + b;
+    } else if (op === "-") {
+      // ensure positive result
+      const result = randInt(1, maxBase);
+      b = randInt(1, maxBase);
+      a = result + b; // a - b = result
+      c = result;
+    } else {
+      // multiplication
+      const limit = Math.max(2, Math.floor(maxBase / 2));
+      a = randInt(1, limit);
+      b = randInt(1, limit);
+      c = a * b;
+    }
+
+    // positions: 0 = left, 1 = right, 2 = result
+    let positions;
+    if (difficulty === "easy") {
+      positions = [2]; // only hide result
+    } else {
+      positions = [0, 1, 2];
+    }
+
+    const hidePos = positions[randInt(0, positions.length - 1)];
+    const letters = ["X", "Y", "Z"];
+    const letter = letters[randInt(0, letters.length - 1)];
+
+    let leftDisplay = String(a);
+    let rightDisplay = String(b);
+    let resultDisplay = String(c);
+    let answer;
+
+    if (hidePos === 0) {
+      leftDisplay = letter;
+      answer = a;
+    } else if (hidePos === 1) {
+      rightDisplay = letter;
+      answer = b;
+    } else {
+      resultDisplay = letter;
+      answer = c;
+    }
+
+    const opSymbol = op === "×" ? "×" : op;
+
+    return {
+      leftDisplay,
+      rightDisplay,
+      resultDisplay,
+      opSymbol,
+      answer,
+    };
+  }
+
   function nextQuestion() {
-    const maxTable = parseInt(maxTableSelect.value, 10) || 10;
-    const baseVal = parseInt(baseTableSelect && baseTableSelect.value, 10);
-
-    let a, b, key;
-    do {
-      if (!Number.isNaN(baseVal)) {
-        // Fixed table (e.g. always 7 × ?)
-        a = baseVal;
-        b = randInt(1, maxTable);
-      } else {
-        // Mixed practice within range
-        a = randInt(2, maxTable);
-        b = randInt(1, maxTable);
-      }
-      key = `${a}x${b}`;
-    } while (key === lastQuestionKey);
-
-    lastQuestionKey = key;
-    currentAnswer = a * b;
-
-    leftOperandEl.textContent = a;
-    rightOperandEl.textContent = b;
-
-    answerInput.value = "";
     clearQuestionState();
 
+    if (gameType === "multiplication") {
+      const maxTable = parseInt(maxTableSelect.value, 10) || 10;
+      const baseVal = parseInt(baseTableSelect && baseTableSelect.value, 10);
+
+      let a, b, key;
+      do {
+        if (!Number.isNaN(baseVal)) {
+          a = baseVal;
+          b = randInt(1, maxTable);
+        } else {
+          a = randInt(2, maxTable);
+          b = randInt(1, maxTable);
+        }
+        key = `${a}x${b}`;
+      } while (key === lastQuestionKey);
+
+      lastQuestionKey = key;
+      currentAnswer = a * b;
+
+      leftOperandEl.textContent = a;
+      rightOperandEl.textContent = b;
+      if (operatorEl) operatorEl.textContent = "×";
+      if (resultOperandEl) resultOperandEl.textContent = "";
+
+    } else {
+      // Algebra
+      const q = generateAlgebraQuestion();
+      currentAnswer = q.answer;
+
+      leftOperandEl.textContent = q.leftDisplay;
+      rightOperandEl.textContent = q.rightDisplay;
+      if (resultOperandEl) resultOperandEl.textContent = q.resultDisplay;
+      if (operatorEl) operatorEl.textContent = q.opSymbol;
+    }
+
+    answerInput.value = "";
     if (!isMobile) {
       answerInput.focus();
     } else {
@@ -265,7 +367,7 @@
       return;
     }
     if (value === currentAnswer) {
-      handleCorrect();
+      handleCorrect(value);
     } else {
       handleWrong(value);
     }
@@ -368,8 +470,47 @@
       answerInput.focus();
     }
     keepViewStable();
-    setFeedback("Game started. Good luck! 🎯");
+
+    if (gameType === "algebra") {
+      setFeedback("Algebra mode started. Solve for the missing value! 🎯");
+    } else {
+      setFeedback("Game started. Good luck! 🎯");
+    }
+
     nextQuestion();
+  }
+
+  // --- Mode switching ---
+  function setGameType(type) {
+    if (type === gameType) return;
+
+    // If changing mode while running, reset first
+    if (isRunning) {
+      resetEverything();
+    }
+
+    gameType = type;
+
+    document.body.classList.toggle("algebra-mode", type === "algebra");
+    document.body.classList.toggle("multiplication-mode", type === "multiplication");
+
+    modeMultiplicationBtn.classList.toggle("active", type === "multiplication");
+    modeAlgebraBtn.classList.toggle("active", type === "algebra");
+
+    // Change start button label
+    if (type === "algebra") {
+      startButton.textContent = "Play Algebra";
+    } else {
+      startButton.textContent = "Start";
+    }
+
+    clearQuestionState();
+    answerInput.value = "";
+    setFeedback(
+      type === "algebra"
+        ? "Pick a difficulty and press Play Algebra."
+        : "Press Start to begin."
+    );
   }
 
   // --- Custom keypad handler ---
@@ -464,9 +605,19 @@
     answerInput.setAttribute("inputmode", "numeric");
   }
 
+  // Mode toggle buttons
+  modeMultiplicationBtn.addEventListener("click", () => {
+    setGameType("multiplication");
+  });
+
+  modeAlgebraBtn.addEventListener("click", () => {
+    setGameType("algebra");
+  });
+
   // Start in idle state
   updateStats();
   updateTimeDisplay();
+  setGameType("multiplication");
   setFeedback("Press Start to begin.");
   clearQuestionState();
 })();

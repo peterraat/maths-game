@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body class="multiplication-mode">
     <header class="app-header">
       <div class="logo">
         <span class="logo-dot"></span>
@@ -17,11 +17,26 @@
 
     <main class="app-main">
       <section class="card game-card">
-        <h2 class="game-title">Multiplication Trainer</h2>
+        <h2 class="game-title">Math Trainer</h2>
+
+        <!-- Mode toggle -->
+        <div class="mode-toggle">
+          <button
+            id="modeMultiplication"
+            class="mode-btn active"
+            type="button"
+          >
+            Multiplication
+          </button>
+          <button id="modeAlgebra" class="mode-btn" type="button">
+            Algebra
+          </button>
+        </div>
 
         <!-- Controls -->
         <div class="controls-row">
-          <div class="field">
+          <!-- Multiplication controls -->
+          <div class="field multi-only">
             <span class="field-label">Multiplication</span>
             <select id="baseTable" class="field-input">
               <option value="">Mix 2–20</option>
@@ -37,12 +52,22 @@
             </select>
           </div>
 
-          <div class="field">
+          <div class="field multi-only">
             <span class="field-label">Max number</span>
             <select id="maxTable" class="field-input">
               <option value="10">Up to 10</option>
               <option value="12">Up to 12</option>
               <option value="20">Up to 20</option>
+            </select>
+          </div>
+
+          <!-- Algebra controls -->
+          <div class="field algebra-only" id="algebraDifficultyField">
+            <span class="field-label">Algebra difficulty</span>
+            <select id="algebraDifficulty" class="field-input">
+              <option value="easy">Easy (kids)</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
             </select>
           </div>
 
@@ -55,8 +80,12 @@
           </div>
 
           <div class="field field-buttons">
-            <button id="startButton" class="btn primary">Start</button>
-            <button id="stopButton" class="btn danger">Stop</button>
+            <button id="startButton" class="btn primary" type="button">
+              Start
+            </button>
+            <button id="stopButton" class="btn danger" type="button">
+              Stop
+            </button>
           </div>
         </div>
 
@@ -73,6 +102,8 @@
             <span class="operator">&times;</span>
             <span id="rightOperand">8</span>
             <span class="equals">=</span>
+            <!-- Result slot only used/visible in Algebra mode -->
+            <span id="resultOperand" class="result-operand"></span>
           </div>
 
           <div id="questionHint" class="question-hint"></div>
@@ -103,7 +134,9 @@
           <button type="button" data-key="8">8</button>
           <button type="button" data-key="9">9</button>
 
-          <button type="button" data-key="clear" class="keypad-func">Clear</button>
+          <button type="button" data-key="clear" class="keypad-func">
+            Clear
+          </button>
           <button type="button" data-key="0">0</button>
           <button type="button" data-key="back" class="keypad-func">⌫</button>
 
@@ -118,8 +151,12 @@
 
         <!-- Check / Skip -->
         <div class="button-row">
-          <button id="submitButton" class="btn ghost">Check</button>
-          <button id="skipButton" class="btn ghost">Skip</button>
+          <button id="submitButton" class="btn ghost" type="button">
+            Check
+          </button>
+          <button id="skipButton" class="btn ghost" type="button">
+            Skip
+          </button>
         </div>
 
         <!-- Feedback & Stats -->
