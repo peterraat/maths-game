@@ -1,5 +1,6 @@
 // public/game.js
 (() => {
+  // --- DOM elements ---
   const leftOperandEl = document.getElementById("leftOperand");
   const rightOperandEl = document.getElementById("rightOperand");
   const resultOperandEl = document.getElementById("resultOperand");
@@ -24,8 +25,8 @@
   const timedInfoEl = document.getElementById("timedInfo");
   const timeDisplayEl = document.getElementById("timeDisplay");
   const keypadEl = document.getElementById("keypad");
-  const contrastToggle = document.getElementById("contrastToggle");
 
+  const themeToggle = document.getElementById("themeToggle");
   const resultOverlay = document.getElementById("resultOverlay");
   const resultIcon = document.getElementById("resultIcon");
   const questionAreaEl = document.querySelector(".question-area");
@@ -34,6 +35,19 @@
   const modeMultiplicationBtn = document.getElementById("modeMultiplication");
   const modeAlgebraBtn = document.getElementById("modeAlgebra");
 
+  const playModeSingleBtn = document.getElementById("playModeSingle");
+  const playModeMultiBtn = document.getElementById("playModeMulti");
+  const multiplayerControls = document.getElementById("multiplayerControls");
+  const playerNameInput = document.getElementById("playerNameInput");
+  const joinMultiplayerButton = document.getElementById("joinMultiplayerButton");
+  const multiplayerStatus = document.getElementById("multiplayerStatus");
+  const multiplayerPlayersList = document.getElementById("multiplayerPlayers");
+
+  const leaderboardOverlay = document.getElementById("leaderboardOverlay");
+  const leaderboardContent = document.getElementById("leaderboardContent");
+  const leaderboardClose = document.getElementById("leaderboardClose");
+
+  // --- State ---
   let correct = 0;
   let wrong = 0;
   let streak = 0;
@@ -44,12 +58,22 @@
   let remainingMs = 60000; // 60 seconds
   let overlayTimeout = null;
   let gameType = "multiplication"; // 'multiplication' | 'algebra'
+  let playMode = "single"; // 'single' | 'multi'
 
   const isMobile =
     /Mobi|Android|iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
     window.innerWidth <= 600;
 
-  // Keep viewport stable on mobile to stop keypad jumps
+  // Multiplayer
+  const socket = io();
+  let mpLobbyId = null;
+  let mpQuestions = [];
+  let mpQuestionIndex = 0;
+  let mpInLobby = false;
+  let mpActive = false;
+  let mpStartTimeMs = null;
+
+  // --- Helpers: keep viewport stable on mobile ---
   function keepViewStable() {
     if (isMobile) {
       window.scrollTo(0, 0);
@@ -188,7 +212,6 @@
     if (leftOperandEl) leftOperandEl.textContent = "";
     if (rightOperandEl) rightOperandEl.textContent = "";
     if (resultOperandEl) resultOperandEl.textContent = "";
-    // Keep operator as-is so layout doesn't jump, but no numbers are shown
   }
 
   // Build a string like '7 × 8' or 'X + 3 = 9' for messages
@@ -286,7 +309,8 @@
     };
   }
 
-  function nextQuestion() {
+  // --- Question generation (single player) ---
+  function nextSingleQuestion() {
     clearQuestionState();
 
     if (gameType === "multiplication") {
@@ -333,7 +357,39 @@
     keepViewStable();
   }
 
-  function handleCorrect() {
+  // --- Question display (multiplayer) ---
+  function showMultiplayerQuestion(index) {
+    clearQuestionState();
+
+    const q = mpQuestions[index];
+    if (!q) {
+      // No more questions
+      finishMultiplayerRound();
+      return;
+    }
+
+    gameType = "multiplication"; // multiplayer is multiplication only
+    document.body.classList.add("multiplication-mode");
+    document.body.classList.remove("algebra-mode");
+
+    leftOperandEl.textContent = q.a;
+    rightOperandEl.textContent = q.b;
+    if (operatorEl) operatorEl.textContent = q.op || "×";
+    if (resultOperandEl) resultOperandEl.textContent = "";
+
+    currentAnswer = q.a * q.b;
+
+    answerInput.value = "";
+    if (!isMobile) {
+      answerInput.focus();
+    } else {
+      answerInput.blur();
+    }
+    setFeedback("Multiplayer: answer as fast and accurately as you can! 🎯");
+    keepViewStable();
+  }
+
+  function handleCorrect(isMultiplayer = false) {
     correct += 1;
     streak += 1;
     setFeedback("Nice! ✅", "correct");
@@ -350,10 +406,16 @@
     }
 
     updateStats();
-    nextQuestion();
+
+    if (isMultiplayer) {
+      mpQuestionIndex += 1;
+      showMultiplayerQuestion(mpQuestionIndex);
+    } else {
+      nextSingleQuestion();
+    }
   }
 
-  function handleWrong(userValue, { reason = "wrong" } = {}) {
+  function handleWrong(userValue, { reason = "wrong", isMultiplayer = false } = {}) {
     wrong += 1;
     streak = 0;
 
@@ -382,11 +444,16 @@
 
     updateStats();
 
-    // Give time for the user to read the correct answer before next question
+    // Give time for user to read correct answer
     setTimeout(() => {
       clearQuestionState();
-      nextQuestion();
-    }, 1400); // ~1.4 seconds
+      if (isMultiplayer) {
+        mpQuestionIndex += 1;
+        showMultiplayerQuestion(mpQuestionIndex);
+      } else {
+        nextSingleQuestion();
+      }
+    }, 1400);
   }
 
   function submitAnswer() {
@@ -401,13 +468,17 @@
       setFeedback("That doesn't look like a number.");
       return;
     }
+
+    const isMultiplayer = playMode === "multi" && mpActive;
+
     if (value === currentAnswer) {
-      handleCorrect(value);
+      handleCorrect(isMultiplayer);
     } else {
-      handleWrong(value, { reason: "wrong" });
+      handleWrong(value, { reason: "wrong", isMultiplayer });
     }
   }
 
+  // --- Timer (single-player only) ---
   function stopTimer() {
     if (timerId) {
       clearInterval(timerId);
@@ -447,7 +518,6 @@
     updateStats();
   }
 
-  // FULL reset for Stop button / mode changes
   function resetEverything() {
     isRunning = false;
     stopTimer();
@@ -480,9 +550,21 @@
     if (keypadEl) {
       keypadEl.classList.remove("keypad-visible");
     }
+
+    mpActive = false;
+    mpInLobby = false;
+    mpLobbyId = null;
+    mpQuestions = [];
+    mpQuestionIndex = 0;
+    mpStartTimeMs = null;
   }
 
-  function startGame() {
+  function startSinglePlayerGame() {
+    if (playMode !== "single") {
+      setFeedback("You are in multiplayer mode. Switch to Single Player to use Start.");
+      return;
+    }
+
     isRunning = true;
     resetGameState();
     clearQuestionState();
@@ -513,41 +595,115 @@
       setFeedback("Game started. Good luck! 🎯");
     }
 
-    nextQuestion();
+    nextSingleQuestion();
   }
 
-  // --- Mode switching ---
+  // --- Mode switching: Multiplication vs Algebra ---
   function setGameType(type) {
     if (type === gameType) return;
-
-    // If changing mode while running, reset first
-    if (isRunning) {
-      resetEverything();
-    }
-
     gameType = type;
 
-    document.body.classList.toggle("algebra-mode", type === "algebra");
-    document.body.classList.toggle("multiplication-mode", type === "multiplication");
+    document.body.classList.toggle(
+      "algebra-mode",
+      type === "algebra"
+    );
+    document.body.classList.toggle(
+      "multiplication-mode",
+      type === "multiplication"
+    );
 
     modeMultiplicationBtn.classList.toggle("active", type === "multiplication");
     modeAlgebraBtn.classList.toggle("active", type === "algebra");
-
-    // Change start button label
-    if (type === "algebra") {
-      startButton.textContent = "Play Algebra";
-    } else {
-      startButton.textContent = "Start";
-    }
 
     clearQuestionState();
     clearDisplayQuestion();
     answerInput.value = "";
     setFeedback(
       type === "algebra"
-        ? "Pick a difficulty and press Play Algebra."
+        ? "Pick a difficulty and press Start (single) or Play with others (multi)."
         : "Press Start to begin."
     );
+  }
+
+  // --- Play mode: Single vs Multi ---
+  function setPlayMode(mode) {
+    if (mode === playMode) return;
+    playMode = mode;
+
+    document.body.classList.toggle("multi-play", mode === "multi");
+
+    playModeSingleBtn.classList.toggle("active", mode === "single");
+    playModeMultiBtn.classList.toggle("active", mode === "multi");
+
+    if (mode === "multi") {
+      multiplayerControls.classList.remove("hidden");
+      setFeedback("Enter your name and click 'Play with others' to join.");
+      timedInfoEl.classList.add("hidden");
+      stopTimer();
+      remainingMs = 60000;
+      updateTimeDisplay();
+    } else {
+      multiplayerControls.classList.add("hidden");
+      multiplayerStatus.textContent = "Multiplayer not started.";
+      multiplayerPlayersList.innerHTML = "";
+      mpInLobby = false;
+      mpLobbyId = null;
+      mpQuestions = [];
+      mpQuestionIndex = 0;
+      setFeedback("Press Start to begin.");
+    }
+
+    clearQuestionState();
+    clearDisplayQuestion();
+    answerInput.value = "";
+  }
+
+  // --- Multiplayer: starting a round ---
+  function startMultiplayerRound(questions, lobbyId) {
+    playMode = "multi";
+    document.body.classList.add("multi-play");
+    document.body.classList.add("playing");
+
+    mpActive = true;
+    mpQuestions = questions || [];
+    mpQuestionIndex = 0;
+    mpLobbyId = lobbyId || mpLobbyId;
+    mpStartTimeMs = Date.now();
+
+    isRunning = true;
+    stopTimer();
+    timedInfoEl.classList.add("hidden");
+
+    if (keypadEl) {
+      keypadEl.classList.add("keypad-visible");
+    }
+    if (isMobile) {
+      answerInput.blur();
+    } else {
+      answerInput.focus();
+    }
+
+    setFeedback("Multiplayer started! Everyone is answering the same questions.");
+    showMultiplayerQuestion(mpQuestionIndex);
+  }
+
+  function finishMultiplayerRound() {
+    if (!mpActive || !mpLobbyId) return;
+
+    mpActive = false;
+    isRunning = false;
+    document.body.classList.remove("playing");
+
+    const timeMs = mpStartTimeMs ? Date.now() - mpStartTimeMs : null;
+
+    setFeedback("Waiting for other players to finish...");
+
+    socket.emit("playerResult", {
+      lobbyId: mpLobbyId,
+      correct,
+      wrong,
+      timeMs,
+    });
   }
 
   // --- Custom keypad handler ---
@@ -568,25 +724,28 @@
       } else if (key === "enter") {
         submitAnswer();
       } else {
+        // 0-9
         answerInput.value += key;
       }
     });
   }
 
-  // --- High contrast toggle ---
-  if (contrastToggle) {
-    contrastToggle.addEventListener("click", () => {
+  // --- Theme toggle: Dark / Light ---
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
       const html = document.documentElement;
-      html.classList.toggle("high-contrast");
+      const current = html.getAttribute("data-theme") || "dark";
+      const next = current === "dark" ? "light" : "dark";
+      html.setAttribute("data-theme", next);
     });
   }
 
-  // --- Event listeners ---
-  startButton.addEventListener("click", () => {
-    startGame();
+  // --- Event listeners: single player ---
+  startButton?.addEventListener("click", () => {
+    startSinglePlayerGame();
   });
 
-  stopButton.addEventListener("click", () => {
+  stopButton?.addEventListener("click", () => {
     resetEverything();
   });
 
@@ -596,10 +755,11 @@
 
   skipButton.addEventListener("click", () => {
     if (!isRunning) return;
-    handleWrong("skipped", { reason: "skip" });
+    const isMultiplayer = playMode === "multi" && mpActive;
+    handleWrong("skipped", { reason: "skip", isMultiplayer });
   });
 
-  // Desktop keyboard input support
+  // Answer input Enter (single + multi)
   answerInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -607,13 +767,11 @@
     }
   });
 
+  // FIX double key bug: window listener ONLY handles Enter, not digits
   window.addEventListener("keydown", (e) => {
     if (!isRunning) return;
-    if (e.key >= "0" && e.key <= "9" && !isMobile) {
-      answerInput.value += e.key;
-    } else if (e.key === "Backspace" && !isMobile) {
-      answerInput.value = answerInput.value.slice(0, -1);
-    } else if (e.key === "Enter") {
+    if (e.key === "Enter") {
+      e.preventDefault();
       submitAnswer();
     }
   });
@@ -628,7 +786,7 @@
     answerInput.setAttribute("inputmode", "numeric");
   }
 
-  // Mode toggle buttons
+  // --- Mode toggle buttons (Multiplication / Algebra) ---
   modeMultiplicationBtn.addEventListener("click", () => {
     setGameType("multiplication");
   });
@@ -637,10 +795,136 @@
     setGameType("algebra");
   });
 
-  // Start in idle state: no question visible
+  // --- Play mode toggle buttons (Single / Multi) ---
+  playModeSingleBtn.addEventListener("click", () => {
+    setPlayMode("single");
+  });
+
+  playModeMultiBtn.addEventListener("click", () => {
+    setPlayMode("multi");
+  });
+
+  // --- Multiplayer: join button ---
+  joinMultiplayerButton.addEventListener("click", () => {
+    setPlayMode("multi");
+    const name = (playerNameInput.value || "").trim() || "Player";
+    multiplayerStatus.textContent = "Connecting to lobby...";
+    socket.emit("joinLobby", { name });
+  });
+
+  // --- Socket.IO events ---
+  socket.on("connect", () => {
+    console.log("Socket connected", socket.id);
+  });
+
+  socket.on("lobbyJoined", ({ lobbyId, players, remainingSeconds }) => {
+    mpLobbyId = lobbyId;
+    mpInLobby = true;
+    multiplayerStatus.textContent = `Waiting for players... ${remainingSeconds}s left`;
+    multiplayerPlayersList.innerHTML = "";
+    players.forEach((name) => {
+      const li = document.createElement("li");
+      li.textContent = name;
+      multiplayerPlayersList.appendChild(li);
+    });
+  });
+
+  socket.on("lobbyUpdate", ({ lobbyId, players, remainingSeconds, message }) => {
+    if (mpLobbyId && lobbyId !== mpLobbyId) return;
+    mpLobbyId = lobbyId;
+
+    const baseText =
+      remainingSeconds > 0
+        ? `Waiting for other players to join... ${remainingSeconds}s left`
+        : "Starting soon...";
+    multiplayerStatus.textContent = message
+      ? `${message} · ${baseText}`
+      : baseText;
+
+    multiplayerPlayersList.innerHTML = "";
+    players.forEach((name) => {
+      const li = document.createElement("li");
+      li.textContent = name;
+      multiplayerPlayersList.appendChild(li);
+    });
+  });
+
+  socket.on("gameStart", ({ lobbyId, questions }) => {
+    mpLobbyId = lobbyId;
+    mpInLobby = false;
+    multiplayerStatus.textContent = "Game started!";
+    resetGameState();
+    startMultiplayerRound(questions, lobbyId);
+  });
+
+  socket.on("leaderboard", ({ lobbyId, players }) => {
+    if (!mpLobbyId || lobbyId !== mpLobbyId) return;
+
+    mpActive = false;
+    isRunning = false;
+    document.body.classList.remove("playing");
+
+    multiplayerStatus.textContent = "Game finished. Showing leaderboard.";
+
+    // Build leaderboard HTML
+    if (!players || players.length === 0) {
+      leaderboardContent.innerHTML = `<p>No results submitted.</p>`;
+    } else {
+      const rows = players
+        .map((p, index) => {
+          const pos = index + 1;
+          const name = p.name || "Player";
+          const correct = p.results?.correct ?? 0;
+          const wrong = p.results?.wrong ?? 0;
+          const timeMs = p.results?.timeMs ?? null;
+          const timeStr = timeMs ? (timeMs / 1000).toFixed(1) + "s" : "-";
+
+          return `
+            <tr>
+              <td>${pos}</td>
+              <td>${name}</td>
+              <td>${correct}</td>
+              <td>${wrong}</td>
+              <td>${timeStr}</td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      leaderboardContent.innerHTML = `
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Correct</th>
+              <th>Wrong</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      `;
+    }
+
+    leaderboardOverlay.classList.remove("hidden");
+  });
+
+  leaderboardClose.addEventListener("click", () => {
+    leaderboardOverlay.classList.add("hidden");
+    resetEverything();
+  });
+
+  // --- Initial state ---
   updateStats();
+  remainingMs = 60000;
   updateTimeDisplay();
+  document.documentElement.setAttribute("data-theme", "dark");
+  document.body.classList.add("multiplication-mode");
   setGameType("multiplication");
+  setPlayMode("single");
   clearDisplayQuestion();
   setFeedback("Press Start to begin.");
   clearQuestionState();

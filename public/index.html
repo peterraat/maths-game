@@ -12,14 +12,52 @@
         <span class="logo-dot"></span>
         <span class="logo-text">Math Trainer</span>
       </div>
-      <button id="contrastToggle" class="contrast-toggle">HC</button>
+      <button id="themeToggle" class="contrast-toggle">Dark / Light</button>
     </header>
 
     <main class="app-main">
       <section class="card game-card">
         <h2 class="game-title">Math Trainer</h2>
 
-        <!-- Mode toggle -->
+        <!-- Play mode toggle: Single vs Multiplayer -->
+        <div class="playmode-toggle">
+          <button
+            id="playModeSingle"
+            class="mode-btn active"
+            type="button"
+          >
+            Single Player
+          </button>
+          <button id="playModeMulti" class="mode-btn" type="button">
+            Multiplayer
+          </button>
+        </div>
+
+        <!-- Multiplayer controls -->
+        <div id="multiplayerControls" class="multiplayer-controls hidden">
+          <div class="mp-row">
+            <input
+              id="playerNameInput"
+              type="text"
+              class="field-input mp-name-input"
+              placeholder="Your name"
+              maxlength="20"
+            />
+            <button
+              id="joinMultiplayerButton"
+              class="btn ghost mp-join-btn"
+              type="button"
+            >
+              Play with others
+            </button>
+          </div>
+          <div id="multiplayerStatus" class="multiplayer-status">
+            Multiplayer not started.
+          </div>
+          <ul id="multiplayerPlayers" class="multiplayer-players-list"></ul>
+        </div>
+
+        <!-- Mode toggle: Multiplication vs Algebra -->
         <div class="mode-toggle">
           <button
             id="modeMultiplication"
@@ -71,7 +109,7 @@
             </select>
           </div>
 
-          <div class="field">
+          <div class="field single-only">
             <span class="field-label">Mode</span>
             <select id="mode" class="field-input">
               <option value="practice">Practice</option>
@@ -79,7 +117,7 @@
             </select>
           </div>
 
-          <div class="field field-buttons">
+          <div class="field field-buttons single-only">
             <button id="startButton" class="btn primary" type="button">
               Start
             </button>
@@ -89,7 +127,7 @@
           </div>
         </div>
 
-        <!-- Timer -->
+        <!-- Timer (single-player timed only) -->
         <div id="timedInfo" class="timed-info hidden">
           <div class="timer-label">Time left</div>
           <div id="timeDisplay" class="timer-display">01:00.00</div>
@@ -98,9 +136,9 @@
         <!-- Question & Answer -->
         <div class="question-area">
           <div class="question-pill">
-            <span id="leftOperand">7</span>
+            <span id="leftOperand"></span>
             <span class="operator">&times;</span>
-            <span id="rightOperand">8</span>
+            <span id="rightOperand"></span>
             <span class="equals">=</span>
             <!-- Result slot only used/visible in Algebra mode -->
             <span id="resultOperand" class="result-operand"></span>
@@ -184,6 +222,19 @@
       <div id="resultIcon" class="result-icon"></div>
     </div>
 
+    <!-- Leaderboard overlay (multiplayer) -->
+    <div id="leaderboardOverlay" class="leaderboard-overlay hidden">
+      <div class="leaderboard-card">
+        <h3 class="leaderboard-title">🏆 Leaderboard</h3>
+        <div id="leaderboardContent" class="leaderboard-content"></div>
+        <button id="leaderboardClose" class="btn primary lb-close-btn">
+          Close
+        </button>
+      </div>
+    </div>
+
+    <!-- Socket.IO client -->
+    <script src="/socket.io/socket.io.js"></script>
     <script src="game.js"></script>
   </body>
 </html>

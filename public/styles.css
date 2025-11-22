@@ -11,12 +11,13 @@ html,
 body {
   margin: 0;
   padding: 0;
-  height: 100%; /* helps avoid layout jumps */
+  height: 100%;
 }
 
 /* ================
-   Theme
+   Themes
    ================ */
+
 html[data-theme="dark"] {
   --bg-main: radial-gradient(circle at top, #111827 0, #020617 45%, #020617 100%);
   --bg-header: rgba(15, 23, 42, 0.95);
@@ -31,23 +32,24 @@ html[data-theme="dark"] {
   --danger: #f97373;
   --success: #4ade80;
   --pill-bg: rgba(15, 23, 42, 0.9);
+  --overlay-bg: rgba(15, 23, 42, 0.98);
 }
 
-/* High contrast mode overrides */
-html.high-contrast {
-  --bg-main: #000000;
-  --bg-header: #000000;
-  --bg-card: #000000;
-  --bg-card-soft: #000000;
-  --border-subtle: #ffffff;
-  --accent: #ffffff;
-  --accent-soft: rgba(255, 255, 255, 0.08);
-  --accent-strong: #ffffff;
-  --text-main: #ffffff;
-  --text-soft: #facc15;
-  --danger: #ff0000;
-  --success: #00ff00;
-  --pill-bg: #000000;
+html[data-theme="light"] {
+  --bg-main: radial-gradient(circle at top, #eff6ff 0, #e5e7eb 50%, #e5e7eb 100%);
+  --bg-header: rgba(248, 250, 252, 0.96);
+  --bg-card: #f9fafb;
+  --bg-card-soft: #f3f4f6;
+  --border-subtle: rgba(148, 163, 184, 0.5);
+  --accent: #2563eb;
+  --accent-soft: rgba(37, 99, 235, 0.12);
+  --accent-strong: #1d4ed8;
+  --text-main: #0f172a;
+  --text-soft: #6b7280;
+  --danger: #b91c1c;
+  --success: #16a34a;
+  --pill-bg: #e5e7eb;
+  --overlay-bg: #ffffff;
 }
 
 body {
@@ -100,7 +102,7 @@ body {
   color: var(--text-soft);
 }
 
-/* High contrast toggle button */
+/* Theme toggle button */
 .contrast-toggle {
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
@@ -127,10 +129,9 @@ body {
   background: var(--bg-card);
   border-radius: 1.5rem;
   border: 1px solid var(--border-subtle);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
 }
 
-/* Game card */
 .game-card {
   width: 100%;
   max-width: 520px;
@@ -145,9 +146,9 @@ body {
 }
 
 /* ================
-   Mode toggle
+   Play mode toggle (single vs multi)
    ================ */
-.mode-toggle {
+.playmode-toggle {
   display: inline-flex;
   justify-content: center;
   gap: 0.25rem;
@@ -155,7 +156,7 @@ body {
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-card-soft);
-  margin: 0 auto 0.9rem;
+  margin: 0 auto 0.6rem;
 }
 
 .mode-btn {
@@ -174,6 +175,70 @@ body {
   background: var(--accent-soft);
   color: var(--accent-strong);
   border: 1px solid var(--accent);
+}
+
+/* ================
+   Multiplayer controls
+   ================ */
+.multiplayer-controls {
+  border-radius: 1rem;
+  border: 1px dashed var(--border-subtle);
+  background: var(--bg-card-soft);
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.8rem;
+}
+
+.mp-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.mp-name-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.mp-join-btn {
+  white-space: nowrap;
+}
+
+.multiplayer-status {
+  color: var(--text-soft);
+  margin-bottom: 0.25rem;
+}
+
+.multiplayer-players-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.multiplayer-players-list li {
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  background: var(--pill-bg);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.75rem;
+}
+
+/* ================
+   Mode toggle (Multiplication vs Algebra)
+   ================ */
+.mode-toggle {
+  display: inline-flex;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-soft);
+  margin: 0.6rem auto 0.9rem;
 }
 
 /* ================
@@ -220,7 +285,16 @@ body {
   gap: 0.5rem;
 }
 
-/* Show/hide controls based on mode */
+/* Show/hide based on single / multi mode */
+.single-only {
+  display: flex;
+}
+
+body.multi-play .single-only {
+  display: none !important;
+}
+
+/* Show/hide controls based on multiplication vs algebra */
 .multi-only {
   display: flex;
 }
@@ -280,6 +354,7 @@ body.algebra-mode .algebra-only {
   margin-bottom: 0.75rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease,
     background-color 0.15s ease;
+  min-height: 120px;
 }
 
 .question-area.correct {
@@ -303,7 +378,7 @@ body.algebra-mode .algebra-only {
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
   background: radial-gradient(circle at top, var(--accent-soft), transparent 70%);
-  margin: 0 auto 0.5rem;
+  margin: 0 auto 0.4rem;
 }
 
 .operator,
@@ -348,20 +423,9 @@ body.algebra-mode .result-operand {
   border-radius: 1rem;
   border: 2px solid var(--accent);
   background: #0f172a;
-  color: var(--text-main);
+  color: #f9fafb;
   text-align: center;
   outline: none;
-}
-
-/* Remove number spinners */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-input[type="number"] {
-  -moz-appearance: textfield;
 }
 
 /* ================
@@ -517,7 +581,7 @@ input[type="number"] {
   border-radius: 0.9rem;
   border: 1px solid var(--border-subtle);
   background: #020617;
-  color: var(--text-main);
+  color: #f9fafb;
   font-size: 1.4rem;
   font-weight: 600;
   padding: 0.75rem 0;
@@ -538,6 +602,67 @@ input[type="number"] {
   grid-column: 1 / -1;
   background: linear-gradient(135deg, #0f766e, #22c55e);
   border-color: rgba(16, 185, 129, 0.7);
+}
+
+/* ================
+   Leaderboard overlay
+   ================ */
+.leaderboard-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+
+.leaderboard-card {
+  background: var(--overlay-bg);
+  color: var(--text-main);
+  border-radius: 1.5rem;
+  padding: 1.2rem 1.4rem 1rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border-subtle);
+}
+
+.leaderboard-title {
+  margin: 0 0 0.75rem;
+  text-align: center;
+}
+
+.leaderboard-content {
+  max-height: 260px;
+  overflow-y: auto;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 0.3rem 0.4rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+  text-align: left;
+  font-size: 0.8rem;
+}
+
+.leaderboard-table th {
+  font-weight: 600;
+}
+
+.leaderboard-table tr:nth-child(1) td {
+  font-weight: 700;
+}
+
+.lb-close-btn {
+  width: 100%;
 }
 
 /* ================
@@ -572,23 +697,16 @@ input[type="number"] {
     padding: 0.85rem 0;
   }
 
-  /* Mobile playing mode: show only question + answer + keypad + Stop */
+  /* Mobile playing mode: show only question + answer + keypad + Stop / multiplayer info */
   body.playing .app-header,
   body.playing .game-title,
   body.playing .feedback,
   body.playing .stats,
   body.playing .timed-info,
   body.playing .mode-toggle,
-  body.playing .field {
-    display: none;
-  }
-
+  body.playing .playmode-toggle,
+  body.playing .multiplayer-controls,
   body.playing .controls-row {
-    justify-content: center;
-    margin-bottom: 0.4rem;
-  }
-
-  body.playing #startButton {
     display: none;
   }
 
