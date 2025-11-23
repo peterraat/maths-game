@@ -175,6 +175,11 @@
 
         <!-- Question & Answer -->
         <div class="question-area">
+          <!-- Thin progress bar -->
+          <div class="progress-bar">
+            <div id="progressBarFill" class="progress-bar-fill"></div>
+          </div>
+
           <!-- Question meta pill -->
           <div class="question-meta-pill">
             Question <span id="questionNumber">0</span>
@@ -185,30 +190,27 @@
             <span id="scoreTotal">0</span>
           </div>
 
-          <!-- NEW: question + answer in a single row -->
-          <div class="question-row">
-            <div class="question-pill">
-              <span id="leftOperand"></span>
-              <span class="operator">&times;</span>
-              <span id="rightOperand"></span>
-              <span class="equals">=</span>
-              <!-- Result slot only used/visible in Algebra mode -->
-              <span id="resultOperand" class="result-operand"></span>
-            </div>
-
-            <div class="answer-wrapper">
-              <input
-                id="answerInput"
-                type="text"
-                inputmode="numeric"
-                autocomplete="off"
-                class="answer-input-below"
-                placeholder="Your answer"
-              />
-            </div>
+          <div class="question-pill">
+            <span id="leftOperand"></span>
+            <span class="operator">&times;</span>
+            <span id="rightOperand"></span>
+            <span class="equals">=</span>
+            <!-- Result slot only used/visible in Algebra mode -->
+            <span id="resultOperand" class="result-operand"></span>
           </div>
 
           <div id="questionHint" class="question-hint"></div>
+
+          <div class="answer-wrapper">
+            <input
+              id="answerInput"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              class="answer-input-below"
+              placeholder="Your answer"
+            />
+          </div>
         </div>
 
         <!-- Keypad -->
@@ -283,9 +285,23 @@
       <div class="leaderboard-card">
         <h3 class="leaderboard-title">🏆 Leaderboard</h3>
         <div id="leaderboardContent" class="leaderboard-content"></div>
-        <button id="leaderboardClose" class="btn primary lb-close-btn">
-          Close
-        </button>
+
+        <div class="leaderboard-actions">
+          <button
+            id="leaderboardPlayAgain"
+            class="btn primary lb-action-btn"
+            type="button"
+          >
+            Play again
+          </button>
+          <button
+            id="leaderboardMainMenu"
+            class="btn ghost lb-action-btn"
+            type="button"
+          >
+            Main menu
+          </button>
+        </div>
       </div>
     </div>
 
@@ -294,4 +310,3 @@
     <script src="game.js"></script>
   </body>
 </html>
-
