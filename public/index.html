@@ -185,27 +185,30 @@
             <span id="scoreTotal">0</span>
           </div>
 
-          <div class="question-pill">
-            <span id="leftOperand"></span>
-            <span class="operator">&times;</span>
-            <span id="rightOperand"></span>
-            <span class="equals">=</span>
-            <!-- Result slot only used/visible in Algebra mode -->
-            <span id="resultOperand" class="result-operand"></span>
+          <!-- NEW: question + answer in a single row -->
+          <div class="question-row">
+            <div class="question-pill">
+              <span id="leftOperand"></span>
+              <span class="operator">&times;</span>
+              <span id="rightOperand"></span>
+              <span class="equals">=</span>
+              <!-- Result slot only used/visible in Algebra mode -->
+              <span id="resultOperand" class="result-operand"></span>
+            </div>
+
+            <div class="answer-wrapper">
+              <input
+                id="answerInput"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                class="answer-input-below"
+                placeholder="Your answer"
+              />
+            </div>
           </div>
 
           <div id="questionHint" class="question-hint"></div>
-
-          <div class="answer-wrapper">
-            <input
-              id="answerInput"
-              type="text"
-              inputmode="numeric"
-              autocomplete="off"
-              class="answer-input-below"
-              placeholder="Your answer"
-            />
-          </div>
         </div>
 
         <!-- Keypad -->
@@ -291,3 +294,4 @@
     <script src="game.js"></script>
   </body>
 </html>
+
