@@ -42,6 +42,7 @@
   const joinMultiplayerButton = document.getElementById("joinMultiplayerButton");
   const multiplayerStatus = document.getElementById("multiplayerStatus");
   const multiplayerPlayersList = document.getElementById("multiplayerPlayers");
+  const multiplayerCountdown = document.getElementById("multiplayerCountdown");
 
   const leaderboardOverlay = document.getElementById("leaderboardOverlay");
   const leaderboardContent = document.getElementById("leaderboardContent");
@@ -72,12 +73,58 @@
   let mpInLobby = false;
   let mpActive = false;
   let mpStartTimeMs = null;
+  let mpResultSent = false;
+
+  // Lobby countdown (client-side)
+  let lobbyCountdownInterval = null;
+  let lobbyCountdownSeconds = 0;
 
   // --- Helpers: keep viewport stable on mobile ---
   function keepViewStable() {
     if (isMobile) {
       window.scrollTo(0, 0);
     }
+  }
+
+  function updateLobbyCountdownDisplay() {
+    if (!multiplayerCountdown) return;
+    if (lobbyCountdownSeconds > 0) {
+      multiplayerCountdown.textContent = `${lobbyCountdownSeconds}s`;
+    } else {
+      multiplayerCountdown.textContent = "";
+    }
+  }
+
+  function startLobbyCountdown(seconds) {
+    if (lobbyCountdownInterval) {
+      clearInterval(lobbyCountdownInterval);
+      lobbyCountdownInterval = null;
+    }
+    lobbyCountdownSeconds = seconds;
+    updateLobbyCountdownDisplay();
+
+    if (seconds <= 0) return;
+
+    lobbyCountdownInterval = setInterval(() => {
+      lobbyCountdownSeconds -= 1;
+      if (lobbyCountdownSeconds <= 0) {
+        lobbyCountdownSeconds = 0;
+        updateLobbyCountdownDisplay();
+        clearInterval(lobbyCountdownInterval);
+        lobbyCountdownInterval = null;
+      } else {
+        updateLobbyCountdownDisplay();
+      }
+    }, 1000);
+  }
+
+  function stopLobbyCountdown() {
+    if (lobbyCountdownInterval) {
+      clearInterval(lobbyCountdownInterval);
+      lobbyCountdownInterval = null;
+    }
+    lobbyCountdownSeconds = 0;
+    updateLobbyCountdownDisplay();
   }
 
   // --- Audio and vibration helpers ---
@@ -323,7 +370,7 @@
           a = baseVal;
           b = randInt(1, maxTable);
         } else {
-          a = randInt(2, maxTable);
+          a = randInt(2, maxTable); // 2 up to chosen max
           b = randInt(1, maxTable);
         }
         key = `${a}x${b}`;
@@ -551,12 +598,15 @@
       keypadEl.classList.remove("keypad-visible");
     }
 
+    // Reset multiplayer-related state
     mpActive = false;
     mpInLobby = false;
     mpLobbyId = null;
     mpQuestions = [];
     mpQuestionIndex = 0;
     mpStartTimeMs = null;
+    mpResultSent = false;
+    stopLobbyCountdown();
   }
 
   function startSinglePlayerGame() {
@@ -645,11 +695,14 @@
     } else {
       multiplayerControls.classList.add("hidden");
       multiplayerStatus.textContent = "Multiplayer not started.";
+      stopLobbyCountdown();
       multiplayerPlayersList.innerHTML = "";
       mpInLobby = false;
       mpLobbyId = null;
       mpQuestions = [];
       mpQuestionIndex = 0;
+      mpStartTimeMs = null;
+      mpResultSent = false;
       setFeedback("Press Start to begin.");
     }
 
@@ -669,10 +722,12 @@
     mpQuestionIndex = 0;
     mpLobbyId = lobbyId || mpLobbyId;
     mpStartTimeMs = Date.now();
+    mpResultSent = false;
 
     isRunning = true;
     stopTimer();
     timedInfoEl.classList.add("hidden");
+    stopLobbyCountdown();
 
     if (keypadEl) {
       keypadEl.classList.add("keypad-visible");
@@ -688,7 +743,8 @@
   }
 
   function finishMultiplayerRound() {
-    if (!mpActive || !mpLobbyId) return;
+    // Always send result once per lobby if we have one
+    if (!mpLobbyId || mpResultSent) return;
 
     mpActive = false;
     isRunning = false;
@@ -696,6 +752,7 @@
 
     const timeMs = mpStartTimeMs ? Date.now() - mpStartTimeMs : null;
 
+    mpResultSent = true;
     setFeedback("Waiting for other players to finish...");
 
     socket.emit("playerResult", {
@@ -740,13 +797,18 @@
     });
   }
 
-  // --- Event listeners: single player ---
+  // --- Event listeners: single player + multi ---
   startButton?.addEventListener("click", () => {
     startSinglePlayerGame();
   });
 
   stopButton?.addEventListener("click", () => {
-    resetEverything();
+    // In multiplayer, Stop submits your result instead of silently wiping
+    if (playMode === "multi" && mpActive && mpLobbyId) {
+      finishMultiplayerRound();
+    } else {
+      resetEverything();
+    }
   });
 
   submitButton.addEventListener("click", () => {
@@ -820,39 +882,42 @@
   socket.on("lobbyJoined", ({ lobbyId, players, remainingSeconds }) => {
     mpLobbyId = lobbyId;
     mpInLobby = true;
-    multiplayerStatus.textContent = `Waiting for players... ${remainingSeconds}s left`;
+    mpResultSent = false;
+
+    multiplayerStatus.textContent = "Waiting for other players to join...";
     multiplayerPlayersList.innerHTML = "";
     players.forEach((name) => {
       const li = document.createElement("li");
       li.textContent = name;
       multiplayerPlayersList.appendChild(li);
     });
+
+    startLobbyCountdown(remainingSeconds);
   });
 
   socket.on("lobbyUpdate", ({ lobbyId, players, remainingSeconds, message }) => {
     if (mpLobbyId && lobbyId !== mpLobbyId) return;
     mpLobbyId = lobbyId;
 
-    const baseText =
-      remainingSeconds > 0
-        ? `Waiting for other players to join... ${remainingSeconds}s left`
-        : "Starting soon...";
-    multiplayerStatus.textContent = message
-      ? `${message} · ${baseText}`
-      : baseText;
-
+    multiplayerStatus.textContent =
+      message || "Waiting for other players to join...";
     multiplayerPlayersList.innerHTML = "";
     players.forEach((name) => {
       const li = document.createElement("li");
       li.textContent = name;
       multiplayerPlayersList.appendChild(li);
     });
+
+    if (typeof remainingSeconds === "number") {
+      startLobbyCountdown(remainingSeconds);
+    }
   });
 
   socket.on("gameStart", ({ lobbyId, questions }) => {
     mpLobbyId = lobbyId;
     mpInLobby = false;
     multiplayerStatus.textContent = "Game started!";
+    stopLobbyCountdown();
     resetGameState();
     startMultiplayerRound(questions, lobbyId);
   });
