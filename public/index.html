@@ -36,21 +36,24 @@
         <!-- Multiplayer controls -->
         <div id="multiplayerControls" class="multiplayer-controls hidden">
           <div class="mp-row">
+            <label for="playerNameInput" class="mp-name-label">
+              Your name =
+            </label>
             <input
               id="playerNameInput"
               type="text"
               class="field-input mp-name-input"
-              placeholder="Your name"
+              placeholder="Enter your name"
               maxlength="20"
             />
-            <button
-              id="joinMultiplayerButton"
-              class="btn ghost mp-join-btn"
-              type="button"
-            >
-              Play with others
-            </button>
           </div>
+          <button
+            id="joinMultiplayerButton"
+            class="btn primary mp-join-btn"
+            type="button"
+          >
+            Play with others
+          </button>
           <div id="multiplayerStatus" class="multiplayer-status">
             Multiplayer not started.
           </div>
@@ -294,4 +297,3 @@
     <script src="game.js"></script>
   </body>
 </html>
-

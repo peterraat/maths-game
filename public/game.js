@@ -970,7 +970,7 @@
     multiplayerPlayersList.innerHTML = "";
     players.forEach((name) => {
       const li = document.createElement("li");
-      li.textContent = name;
+      li.textContent = `${name} has joined the game`;
       multiplayerPlayersList.appendChild(li);
     });
 
@@ -986,7 +986,7 @@
     multiplayerPlayersList.innerHTML = "";
     players.forEach((name) => {
       const li = document.createElement("li");
-      li.textContent = name;
+      li.textContent = `${name} has joined the game`;
       multiplayerPlayersList.appendChild(li);
     });
 

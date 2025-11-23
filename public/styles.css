@@ -203,13 +203,20 @@ html[data-theme="dark"] .mode-btn {
   margin-bottom: 0.4rem;
 }
 
+.mp-name-label {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
 .mp-name-input {
   flex: 1;
   min-width: 0;
 }
 
 .mp-join-btn {
-  white-space: nowrap;
+  width: 100%;
+  margin-bottom: 0.4rem;
 }
 
 .multiplayer-status {
@@ -230,15 +237,15 @@ html[data-theme="dark"] .mode-btn {
 .multiplayer-players-list {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0.25rem 0 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  justify-content: center;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: flex-start;
 }
 
 .multiplayer-players-list li {
-  padding: 0.1rem 0.6rem;
+  padding: 0.1rem 0.4rem;
   border-radius: 999px;
   background: var(--pill-bg);
   border: 1px solid var(--border-subtle);
