@@ -149,14 +149,16 @@ body {
    Play mode toggle (single vs multi)
    ================ */
 .playmode-toggle {
-  display: inline-flex;
+  display: flex;
   justify-content: center;
+  align-items: center;
   gap: 0.25rem;
   padding: 0.4rem;
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-card-soft);
   margin: 0 auto 0.6rem;
+  width: fit-content;
 }
 
 .mode-btn {
@@ -247,14 +249,16 @@ html[data-theme="dark"] .mode-btn {
    Mode toggle (Multiplication vs Algebra)
    ================ */
 .mode-toggle {
-  display: inline-flex;
+  display: flex;
   justify-content: center;
+  align-items: center;
   gap: 0.25rem;
   padding: 0.4rem;
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-card-soft);
   margin: 0.6rem auto 0.9rem;
+  width: fit-content;
 }
 
 /* ================
@@ -638,6 +642,12 @@ body.playing .button-row {
   padding: 0.65rem 0;
   cursor: pointer;
   transition: background 0.12s ease, transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+/* Light mode keypad */
+html[data-theme="light"] .keypad button {
+  background: #e5e7eb;
+  color: #0f172a;
 }
 
 .keypad button:active {

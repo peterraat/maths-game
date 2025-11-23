@@ -17,6 +17,7 @@
   const modeSelect = document.getElementById("mode");
   const baseTableSelect = document.getElementById("baseTable");
   const algebraDifficultySelect = document.getElementById("algebraDifficulty");
+  const questionCountSelect = document.getElementById("questionCount");
 
   const feedbackEl = document.getElementById("feedback");
   const correctCountEl = document.getElementById("correctCount");
@@ -66,6 +67,10 @@
   let overlayTimeout = null;
   let gameType = "multiplication"; // 'multiplication' | 'algebra'
   let playMode = "single"; // 'single' | 'multi'
+
+  // Question session limit (single player)
+  let questionsTarget = 10;
+  let singleQuestionIndex = 0; // how many questions have been shown in this session
 
   const isMobile =
     /Mobi|Android|iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
@@ -189,6 +194,28 @@
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
+  function updateQuestionMeta() {
+    if (!questionNumberEl || !scoreCorrectEl || !scoreTotalEl) return;
+
+    if (mpActive) {
+      // Multiplayer: show current question index and total mp questions
+      const currentIndex = mpQuestionIndex + 1;
+      const totalQ = mpQuestions.length || 0;
+      questionNumberEl.textContent = String(
+        currentIndex <= totalQ ? currentIndex : totalQ
+      );
+      scoreCorrectEl.textContent = String(correct);
+      scoreTotalEl.textContent = String(totalQ);
+    } else {
+      // Single player: show "3 out of X" where X is chosen questions
+      const currentQuestionNumber =
+        singleQuestionIndex === 0 ? 0 : singleQuestionIndex;
+      questionNumberEl.textContent = String(currentQuestionNumber);
+      scoreCorrectEl.textContent = String(correct);
+      scoreTotalEl.textContent = String(questionsTarget);
+    }
+  }
+
   function updateStats() {
     const total = correct + wrong;
     const accuracy = total === 0 ? 0 : Math.round((correct / total) * 100);
@@ -197,12 +224,7 @@
     streakCountEl.textContent = streak;
     accuracyEl.textContent = `${accuracy}%`;
 
-    // Update question meta pill
-    if (questionNumberEl && scoreCorrectEl && scoreTotalEl) {
-      questionNumberEl.textContent = String(total);
-      scoreCorrectEl.textContent = String(correct);
-      scoreTotalEl.textContent = String(total);
-    }
+    updateQuestionMeta();
   }
 
   function setFeedback(message, type = "") {
@@ -373,6 +395,16 @@
   function nextSingleQuestion() {
     clearQuestionState();
 
+    // If we've already shown all questions, end session
+    if (singleQuestionIndex >= questionsTarget) {
+      endSinglePlayerSession();
+      return;
+    }
+
+    // We're about to show a new question
+    singleQuestionIndex += 1;
+    updateQuestionMeta();
+
     if (gameType === "multiplication") {
       const maxTable = parseInt(maxTableSelect.value, 10) || 10;
       const baseVal = parseInt(baseTableSelect && baseTableSelect.value, 10);
@@ -440,6 +472,8 @@
     currentAnswer = q.a * q.b;
 
     answerInput.value = "";
+    updateQuestionMeta();
+
     if (!isMobile) {
       answerInput.focus();
     } else {
@@ -447,6 +481,16 @@
     }
     setFeedback("Multiplayer: answer as fast and accurately as you can! 🎯");
     keepViewStable();
+  }
+
+  function endSinglePlayerSession() {
+    isRunning = false;
+    document.body.classList.remove("playing");
+    if (keypadEl) keypadEl.classList.remove("keypad-visible");
+
+    const total = questionsTarget;
+    const summary = `Session complete! ✅ You answered ${correct} out of ${total} questions correctly. Accuracy: ${accuracyEl.textContent}`;
+    setFeedback(summary, "correct");
   }
 
   function handleCorrect(isMultiplayer = false) {
@@ -504,16 +548,16 @@
 
     updateStats();
 
-    // Give time for user to read correct answer
-    setTimeout(() => {
-      clearQuestionState();
-      if (isMultiplayer) {
-        mpQuestionIndex += 1;
-        showMultiplayerQuestion(mpQuestionIndex);
-      } else {
+    if (isMultiplayer) {
+      mpQuestionIndex += 1;
+      showMultiplayerQuestion(mpQuestionIndex);
+    } else {
+      // Give time for user to read correct answer
+      setTimeout(() => {
+        clearQuestionState();
         nextSingleQuestion();
-      }
-    }, 1400);
+      }, 1400);
+    }
   }
 
   function submitAnswer() {
@@ -575,6 +619,7 @@
     wrong = 0;
     streak = 0;
     lastQuestionKey = "";
+    singleQuestionIndex = 0;
     updateStats();
   }
 
@@ -588,6 +633,8 @@
     wrong = 0;
     streak = 0;
     lastQuestionKey = "";
+    questionsTarget = parseInt(questionCountSelect?.value, 10) || 10;
+    singleQuestionIndex = 0;
     updateStats();
 
     setFeedback("Press Start to begin.");
@@ -627,6 +674,9 @@
       setFeedback("You are in multiplayer mode. Switch to Single Player to use Start.");
       return;
     }
+
+    // Read chosen number of questions
+    questionsTarget = parseInt(questionCountSelect?.value, 10) || 10;
 
     isRunning = true;
     resetGameState();
@@ -752,45 +802,7 @@
     }
 
     setFeedback("Multiplayer started! Everyone is answering the same questions.");
-    nextMultiplayerQuestion();
-  }
-
-  function nextMultiplayerQuestion() {
-    const qIndex = mpQuestionIndex;
-    const q = mpQuestions[qIndex];
-    if (!q) {
-      finishMultiplayerRound();
-      return;
-    }
-
-    clearQuestionState();
-
-    gameType = "multiplication";
-    document.body.classList.add("multiplication-mode");
-    document.body.classList.remove("algebra-mode");
-
-    leftOperandEl.textContent = q.a;
-    rightOperandEl.textContent = q.b;
-    if (operatorEl) operatorEl.textContent = q.op || "×";
-    if (resultOperandEl) resultOperandEl.textContent = "";
-
-    currentAnswer = q.a * q.b;
-    answerInput.value = "";
-
-    const total = correct + wrong;
-    if (questionNumberEl && scoreCorrectEl && scoreTotalEl) {
-      questionNumberEl.textContent = String(total);
-      scoreCorrectEl.textContent = String(correct);
-      scoreTotalEl.textContent = String(total);
-    }
-
-    if (!isMobile) {
-      answerInput.focus();
-    } else {
-      answerInput.blur();
-    }
-    setFeedback("Multiplayer: answer as fast and accurately as you can! 🎯");
-    keepViewStable();
+    showMultiplayerQuestion(mpQuestionIndex);
   }
 
   function finishMultiplayerRound() {
@@ -930,8 +942,15 @@
   joinMultiplayerButton.addEventListener("click", () => {
     setPlayMode("multi");
     const name = (playerNameInput.value || "").trim() || "Player";
+
+    // Host's settings (used by server for first player to join)
+    const settings = {
+      baseTable: baseTableSelect?.value || "",
+      maxTable: parseInt(maxTableSelect?.value, 10) || 10,
+    };
+
     multiplayerStatus.textContent = "Connecting to lobby...";
-    socket.emit("joinLobby", { name });
+    socket.emit("joinLobby", { name, settings });
   });
 
   // --- Socket.IO events ---
@@ -939,12 +958,15 @@
     console.log("Socket connected", socket.id);
   });
 
-  socket.on("lobbyJoined", ({ lobbyId, players, remainingSeconds }) => {
+  socket.on("lobbyJoined", ({ lobbyId, players, remainingSeconds, isHost }) => {
     mpLobbyId = lobbyId;
     mpInLobby = true;
     mpResultSent = false;
 
-    multiplayerStatus.textContent = "Waiting for other players to join...";
+    multiplayerStatus.textContent = isHost
+      ? "You are host. Your multiplication settings will be used for this game."
+      : "Waiting for host to start the game...";
+
     multiplayerPlayersList.innerHTML = "";
     players.forEach((name) => {
       const li = document.createElement("li");
@@ -1043,6 +1065,8 @@
   });
 
   // --- Initial state ---
+  questionsTarget = parseInt(questionCountSelect?.value, 10) || 10;
+  singleQuestionIndex = 0;
   updateStats();
   remainingMs = 60000;
   updateTimeDisplay();
