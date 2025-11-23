@@ -145,6 +145,15 @@
 
         <!-- Question & Answer -->
         <div class="question-area">
+          <!-- Question meta pill -->
+          <div class="question-meta-pill">
+            Question <span id="questionNumber">0</span>
+            <span class="dot-separator">•</span>
+            Score
+            <span id="scoreCorrect">0</span> /
+            <span id="scoreTotal">0</span>
+          </div>
+
           <div class="question-pill">
             <span id="leftOperand"></span>
             <span class="operator">&times;</span>
@@ -197,13 +206,16 @@
           </button>
         </div>
 
-        <!-- Check / Skip -->
+        <!-- Check / Skip / Main Menu -->
         <div class="button-row">
           <button id="submitButton" class="btn ghost" type="button">
             Check
           </button>
           <button id="skipButton" class="btn ghost" type="button">
             Skip
+          </button>
+          <button id="mainMenuButton" class="btn danger" type="button">
+            Stop / Main Menu
           </button>
         </div>
 

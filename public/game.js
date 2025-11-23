@@ -11,6 +11,7 @@
   const skipButton = document.getElementById("skipButton");
   const startButton = document.getElementById("startButton");
   const stopButton = document.getElementById("stopButton");
+  const mainMenuButton = document.getElementById("mainMenuButton");
 
   const maxTableSelect = document.getElementById("maxTable");
   const modeSelect = document.getElementById("mode");
@@ -47,6 +48,11 @@
   const leaderboardOverlay = document.getElementById("leaderboardOverlay");
   const leaderboardContent = document.getElementById("leaderboardContent");
   const leaderboardClose = document.getElementById("leaderboardClose");
+
+  // Question meta pill elements
+  const questionNumberEl = document.getElementById("questionNumber");
+  const scoreCorrectEl = document.getElementById("scoreCorrect");
+  const scoreTotalEl = document.getElementById("scoreTotal");
 
   // --- State ---
   let correct = 0;
@@ -190,6 +196,13 @@
     wrongCountEl.textContent = wrong;
     streakCountEl.textContent = streak;
     accuracyEl.textContent = `${accuracy}%`;
+
+    // Update question meta pill
+    if (questionNumberEl && scoreCorrectEl && scoreTotalEl) {
+      questionNumberEl.textContent = String(total);
+      scoreCorrectEl.textContent = String(correct);
+      scoreTotalEl.textContent = String(total);
+    }
   }
 
   function setFeedback(message, type = "") {
@@ -739,7 +752,45 @@
     }
 
     setFeedback("Multiplayer started! Everyone is answering the same questions.");
-    showMultiplayerQuestion(mpQuestionIndex);
+    nextMultiplayerQuestion();
+  }
+
+  function nextMultiplayerQuestion() {
+    const qIndex = mpQuestionIndex;
+    const q = mpQuestions[qIndex];
+    if (!q) {
+      finishMultiplayerRound();
+      return;
+    }
+
+    clearQuestionState();
+
+    gameType = "multiplication";
+    document.body.classList.add("multiplication-mode");
+    document.body.classList.remove("algebra-mode");
+
+    leftOperandEl.textContent = q.a;
+    rightOperandEl.textContent = q.b;
+    if (operatorEl) operatorEl.textContent = q.op || "×";
+    if (resultOperandEl) resultOperandEl.textContent = "";
+
+    currentAnswer = q.a * q.b;
+    answerInput.value = "";
+
+    const total = correct + wrong;
+    if (questionNumberEl && scoreCorrectEl && scoreTotalEl) {
+      questionNumberEl.textContent = String(total);
+      scoreCorrectEl.textContent = String(correct);
+      scoreTotalEl.textContent = String(total);
+    }
+
+    if (!isMobile) {
+      answerInput.focus();
+    } else {
+      answerInput.blur();
+    }
+    setFeedback("Multiplayer: answer as fast and accurately as you can! 🎯");
+    keepViewStable();
   }
 
   function finishMultiplayerRound() {
@@ -810,6 +861,15 @@
       resetEverything();
     }
   });
+
+  if (mainMenuButton) {
+    mainMenuButton.addEventListener("click", () => {
+      resetEverything();
+      setPlayMode("single");
+      setGameType("multiplication");
+      setFeedback("Press Start (single) or switch to Multiplayer to join a game.");
+    });
+  }
 
   submitButton.addEventListener("click", () => {
     submitAnswer();
