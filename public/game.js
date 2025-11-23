@@ -48,16 +48,12 @@
 
   const leaderboardOverlay = document.getElementById("leaderboardOverlay");
   const leaderboardContent = document.getElementById("leaderboardContent");
-  const leaderboardPlayAgain = document.getElementById("leaderboardPlayAgain");
-  const leaderboardMainMenu = document.getElementById("leaderboardMainMenu");
+  const leaderboardClose = document.getElementById("leaderboardClose");
 
   // Question meta pill elements
   const questionNumberEl = document.getElementById("questionNumber");
   const scoreCorrectEl = document.getElementById("scoreCorrect");
   const scoreTotalEl = document.getElementById("scoreTotal");
-
-  // Progress bar
-  const progressBarFill = document.getElementById("progressBarFill");
 
   // --- State ---
   let correct = 0;
@@ -93,19 +89,6 @@
   // Lobby countdown (client-side)
   let lobbyCountdownInterval = null;
   let lobbyCountdownSeconds = 0;
-
-  // Motivational messages (for summaries)
-  const praiseMessages = [
-    "Nice work! 🔥",
-    "Math ninja! 🥷",
-    "Brain gains unlocked 💪",
-    "You’re getting sharper every round ✨",
-    "Keep going, you’re on a roll 🚀"
-  ];
-
-  function randomPraise() {
-    return praiseMessages[Math.floor(Math.random() * praiseMessages.length)];
-  }
 
   // --- Helpers: keep viewport stable on mobile ---
   function keepViewStable() {
@@ -211,26 +194,13 @@
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  function updateProgressBar(currentIndex, totalQ) {
-    if (!progressBarFill || !totalQ || totalQ <= 0) {
-      if (progressBarFill) progressBarFill.style.width = "0%";
-      return;
-    }
-    const clamped = Math.min(Math.max(currentIndex - 1, 0), totalQ);
-    const pct = (clamped / totalQ) * 100;
-    progressBarFill.style.width = `${pct}%`;
-  }
-
   function updateQuestionMeta() {
     if (!questionNumberEl || !scoreCorrectEl || !scoreTotalEl) return;
 
-    let currentIndex = 0;
-    let totalQ = 0;
-
     if (mpActive) {
       // Multiplayer: show current question index and total mp questions
-      totalQ = mpQuestions.length || 0;
-      currentIndex = mpQuestionIndex + 1;
+      const currentIndex = mpQuestionIndex + 1;
+      const totalQ = mpQuestions.length || 0;
       questionNumberEl.textContent = String(
         currentIndex <= totalQ ? currentIndex : totalQ
       );
@@ -238,14 +208,12 @@
       scoreTotalEl.textContent = String(totalQ);
     } else {
       // Single player: show "3 out of X" where X is chosen questions
-      totalQ = questionsTarget;
-      currentIndex = singleQuestionIndex;
-      questionNumberEl.textContent = String(currentIndex);
+      const currentQuestionNumber =
+        singleQuestionIndex === 0 ? 0 : singleQuestionIndex;
+      questionNumberEl.textContent = String(currentQuestionNumber);
       scoreCorrectEl.textContent = String(correct);
       scoreTotalEl.textContent = String(questionsTarget);
     }
-
-    updateProgressBar(currentIndex, totalQ);
   }
 
   function updateStats() {
@@ -295,10 +263,10 @@
     resultIcon.classList.remove("correct-flash", "wrong-flash", "show");
 
     if (type === "correct") {
-      resultIcon.textContent = "✅";
+      resultIcon.textContent = "✓";
       resultIcon.classList.add("correct-flash");
     } else {
-      resultIcon.textContent = "❌";
+      resultIcon.textContent = "✕";
       resultIcon.classList.add("wrong-flash");
     }
 
@@ -419,7 +387,7 @@
       rightDisplay,
       resultDisplay,
       opSymbol,
-      answer
+      answer,
     };
   }
 
@@ -477,7 +445,7 @@
     } else {
       answerInput.blur();
     }
-    setFeedback("💡 Type your answer or use the keypad, then press Enter or Check.");
+    setFeedback("Type your answer or use the keypad, then press Enter or Check.");
     keepViewStable();
   }
 
@@ -511,7 +479,7 @@
     } else {
       answerInput.blur();
     }
-    setFeedback("🎮 Multiplayer: answer as fast and accurately as you can!");
+    setFeedback("Multiplayer: answer as fast and accurately as you can! 🎯");
     keepViewStable();
   }
 
@@ -521,15 +489,14 @@
     if (keypadEl) keypadEl.classList.remove("keypad-visible");
 
     const total = questionsTarget;
-    const summary = `Session complete! ✅ ${correct}/${total}  🎯 ${accuracyEl.textContent}`;
-    setFeedback(`${summary}  ${randomPraise()}`, "correct");
-    updateProgressBar(total, total); // fill bar at end
+    const summary = `Session complete! ✅ You answered ${correct} out of ${total} questions correctly. Accuracy: ${accuracyEl.textContent}`;
+    setFeedback(summary, "correct");
   }
 
   function handleCorrect(isMultiplayer = false) {
     correct += 1;
     streak += 1;
-    setFeedback("✅ Nice!", "correct");
+    setFeedback("Nice! ✅", "correct");
     flashResult("correct");
     playSuccessSound();
     vibrate(60);
@@ -552,20 +519,17 @@
     }
   }
 
-  function handleWrong(
-    userValue,
-    { reason = "wrong", isMultiplayer = false } = {}
-  ) {
+  function handleWrong(userValue, { reason = "wrong", isMultiplayer = false } = {}) {
     wrong += 1;
     streak = 0;
 
     const questionString = getCurrentQuestionString();
 
     if (reason === "skip") {
-      setFeedback(`⏭ Skipped. Answer was ${currentAnswer}.`, "wrong");
+      setFeedback(`Skipped. The answer was ${currentAnswer}.`, "wrong");
     } else {
       setFeedback(
-        `❌ You said ${userValue}, correct is ${currentAnswer}.`,
+        `Not quite. You said ${userValue}, correct is ${currentAnswer}.`,
         "wrong"
       );
     }
@@ -600,7 +564,7 @@
     if (!isRunning) return;
     const raw = answerInput.value.trim();
     if (raw === "") {
-      setFeedback("👉 Enter an answer first.");
+      setFeedback("Enter an answer first 😄");
       return;
     }
     const value = Number(raw);
@@ -641,8 +605,9 @@
         isRunning = false;
         document.body.classList.remove("playing");
         if (keypadEl) keypadEl.classList.remove("keypad-visible");
-        const summary = `Time up! ✅ ${correct}  ❌ ${wrong}  🎯 ${accuracyEl.textContent}`;
-        setFeedback(`${summary}  ${randomPraise()}`, "correct");
+        setFeedback(
+          `Time up! ✅ ${correct} correct, ❌ ${wrong} wrong. Accuracy: ${accuracyEl.textContent}`
+        );
       } else {
         updateTimeDisplay();
       }
@@ -671,7 +636,6 @@
     questionsTarget = parseInt(questionCountSelect?.value, 10) || 10;
     singleQuestionIndex = 0;
     updateStats();
-    updateProgressBar(0, questionsTarget);
 
     setFeedback("Press Start to begin.");
     answerInput.value = "";
@@ -717,7 +681,6 @@
     isRunning = true;
     resetGameState();
     clearQuestionState();
-    updateProgressBar(0, questionsTarget);
 
     if (modeSelect.value === "timed") {
       startTimer();
@@ -753,8 +716,14 @@
     if (type === gameType) return;
     gameType = type;
 
-    document.body.classList.toggle("algebra-mode", type === "algebra");
-    document.body.classList.toggle("multiplication-mode", type === "multiplication");
+    document.body.classList.toggle(
+      "algebra-mode",
+      type === "algebra"
+    );
+    document.body.classList.toggle(
+      "multiplication-mode",
+      type === "multiplication"
+    );
 
     modeMultiplicationBtn.classList.toggle("active", type === "multiplication");
     modeAlgebraBtn.classList.toggle("active", type === "algebra");
@@ -832,7 +801,6 @@
       answerInput.focus();
     }
 
-    updateProgressBar(0, mpQuestions.length || 0);
     setFeedback("Multiplayer started! Everyone is answering the same questions.");
     showMultiplayerQuestion(mpQuestionIndex);
   }
@@ -854,7 +822,7 @@
       lobbyId: mpLobbyId,
       correct,
       wrong,
-      timeMs
+      timeMs,
     });
   }
 
@@ -978,7 +946,7 @@
     // Host's settings (used by server for first player to join)
     const settings = {
       baseTable: baseTableSelect?.value || "",
-      maxTable: parseInt(maxTableSelect?.value, 10) || 10
+      maxTable: parseInt(maxTableSelect?.value, 10) || 10,
     };
 
     multiplayerStatus.textContent = "Connecting to lobby...";
@@ -1053,8 +1021,8 @@
         .map((p, index) => {
           const pos = index + 1;
           const name = p.name || "Player";
-          const correctVal = p.results?.correct ?? 0;
-          const wrongVal = p.results?.wrong ?? 0;
+          const correct = p.results?.correct ?? 0;
+          const wrong = p.results?.wrong ?? 0;
           const timeMs = p.results?.timeMs ?? null;
           const timeStr = timeMs ? (timeMs / 1000).toFixed(1) + "s" : "-";
 
@@ -1062,8 +1030,8 @@
             <tr>
               <td>${pos}</td>
               <td>${name}</td>
-              <td>✅ ${correctVal}</td>
-              <td>❌ ${wrongVal}</td>
+              <td>${correct}</td>
+              <td>${wrong}</td>
               <td>${timeStr}</td>
             </tr>
           `;
@@ -1091,20 +1059,9 @@
     leaderboardOverlay.classList.remove("hidden");
   });
 
-  // Leaderboard buttons: play again / main menu
-  leaderboardPlayAgain?.addEventListener("click", () => {
+  leaderboardClose.addEventListener("click", () => {
     leaderboardOverlay.classList.add("hidden");
     resetEverything();
-    setPlayMode("multi");
-    setFeedback("Enter your name and click 'Play with others' to start another round.");
-  });
-
-  leaderboardMainMenu?.addEventListener("click", () => {
-    leaderboardOverlay.classList.add("hidden");
-    resetEverything();
-    setPlayMode("single");
-    setGameType("multiplication");
-    setFeedback("Press Start (single) or switch to Multiplayer to join a game.");
   });
 
   // --- Initial state ---
@@ -1113,7 +1070,6 @@
   updateStats();
   remainingMs = 60000;
   updateTimeDisplay();
-  updateProgressBar(0, questionsTarget);
   document.documentElement.setAttribute("data-theme", "dark");
   document.body.classList.add("multiplication-mode");
   setGameType("multiplication");
