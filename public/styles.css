@@ -779,10 +779,8 @@ html[data-theme="light"] .keypad button {
   body.playing {
     overflow-y: auto;
   }
-}
-/* Hide the stats pills row – we still track stats in JS */
-.stats-row,
-.stats-pills,
-.stats-container {
+
+  /* Hide the stats pills row – we still track stats in JS */
+.stats {
   display: none !important;
 }
