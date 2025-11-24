@@ -12,7 +12,6 @@
   const startButton = document.getElementById("startButton");
   const stopButton = document.getElementById("stopButton");
   const mainMenuButton = document.getElementById("mainMenuButton");
-  const homeButton = document.getElementById("homeButton");
 
   const maxTableSelect = document.getElementById("maxTable");
   const modeSelect = document.getElementById("mode");
@@ -353,36 +352,33 @@
       c = a * b;
     }
 
-  // positions: 0 = left, 1 = right, 2 = result
-  let positions;
-  if (difficulty === "easy") {
-    positions = [2]; // only hide result
-  } else {
-    positions = [0, 1, 2];
-  }
+    // positions: 0 = left, 1 = right, 2 = result
+    let positions;
+    if (difficulty === "easy") {
+      positions = [2]; // only hide result
+    } else {
+      positions = [0, 1, 2];
+    }
 
-  // choose which position to hide
-  const hidePos = positions[randInt(0, positions.length - 1)];
+    const hidePos = positions[randInt(0, positions.length - 1)];
+    const letters = ["X", "Y", "Z"];
+    const letter = letters[randInt(0, letters.length - 1)];
 
-  const letters = ["X", "Y", "Z"];
-  const letter = letters[randInt(0, letters.length - 1)];
+    let leftDisplay = String(a);
+    let rightDisplay = String(b);
+    let resultDisplay = String(c);
+    let answer;
 
-  let leftDisplay = String(a);
-  let rightDisplay = String(b);
-  let resultDisplay = String(c);
-  let answer;
-
-  if (hidePos === 0) {
-    leftDisplay = letter;
-    answer = a;
-  } else if (hidePos === 1) {
-    rightDisplay = letter;
-    answer = b;
-  } else {
-    resultDisplay = letter;
-    answer = c;
-  }
-
+    if (hidePos === 0) {
+      leftDisplay = letter;
+      answer = a;
+    } else if (hidePos === 1) {
+      rightDisplay = letter;
+      answer = b;
+    } else {
+      resultDisplay = letter;
+      answer = c;
+    }
 
     const opSymbol = op === "×" ? "×" : op;
 
@@ -658,7 +654,6 @@
     }
 
     document.body.classList.remove("playing");
-    document.body.classList.remove("multi-lobby");
     if (keypadEl) {
       keypadEl.classList.remove("keypad-visible");
     }
@@ -771,7 +766,6 @@
       mpQuestionIndex = 0;
       mpStartTimeMs = null;
       mpResultSent = false;
-      document.body.classList.remove("multi-lobby");
       setFeedback("Press Start to begin.");
     }
 
@@ -785,7 +779,6 @@
     playMode = "multi";
     document.body.classList.add("multi-play");
     document.body.classList.add("playing");
-    document.body.classList.remove("multi-lobby");
 
     mpActive = true;
     mpQuestions = questions || [];
@@ -890,17 +883,6 @@
     });
   }
 
-  if (homeButton) {
-    homeButton.addEventListener("click", () => {
-      // In-page "home": reset and go back to single player
-      resetEverything();
-      setPlayMode("single");
-      setGameType("multiplication");
-      setFeedback("Press Start to begin.");
-      window.scrollTo(0, 0);
-    });
-  }
-
   submitButton.addEventListener("click", () => {
     submitAnswer();
   });
@@ -971,78 +953,51 @@
     socket.emit("joinLobby", { name, settings });
   });
 
-  // Helper to set lobby status text from payload
-  function updateLobbyStatusFromPayload({ hostName, selectedBaseTable, message }) {
-    if (selectedBaseTable && hostName) {
-      multiplayerStatus.textContent = `${hostName} has selected ${selectedBaseTable} times table`;
-    } else if (message) {
-      multiplayerStatus.textContent = message;
-    } else {
-      multiplayerStatus.textContent = "Waiting for host to start the game...";
-    }
-  }
-
   // --- Socket.IO events ---
   socket.on("connect", () => {
     console.log("Socket connected", socket.id);
   });
 
-  socket.on(
-    "lobbyJoined",
-    ({ lobbyId, players, remainingSeconds, isHost, hostName, selectedBaseTable }) => {
-      mpLobbyId = lobbyId;
-      mpInLobby = true;
-      mpResultSent = false;
+  socket.on("lobbyJoined", ({ lobbyId, players, remainingSeconds, isHost }) => {
+    mpLobbyId = lobbyId;
+    mpInLobby = true;
+    mpResultSent = false;
 
-      document.body.classList.add("multi-lobby");
+    multiplayerStatus.textContent = isHost
+      ? "You are host. Your multiplication settings will be used for this game."
+      : "Waiting for host to start the game...";
 
-      updateLobbyStatusFromPayload({
-        hostName,
-        selectedBaseTable,
-        message: isHost
-          ? "You are host. Your multiplication settings will be used for this game."
-          : "Waiting for host to start the game...",
-      });
+    multiplayerPlayersList.innerHTML = "";
+    players.forEach((name) => {
+      const li = document.createElement("li");
+      li.textContent = `${name} has joined the game`;
+      multiplayerPlayersList.appendChild(li);
+    });
 
-      multiplayerPlayersList.innerHTML = "";
-      players.forEach((name) => {
-        const li = document.createElement("li");
-        li.textContent = `${name} has joined the game`;
-        multiplayerPlayersList.appendChild(li);
-      });
+    startLobbyCountdown(remainingSeconds);
+  });
 
+  socket.on("lobbyUpdate", ({ lobbyId, players, remainingSeconds, message }) => {
+    if (mpLobbyId && lobbyId !== mpLobbyId) return;
+    mpLobbyId = lobbyId;
+
+    multiplayerStatus.textContent =
+      message || "Waiting for other players to join...";
+    multiplayerPlayersList.innerHTML = "";
+    players.forEach((name) => {
+      const li = document.createElement("li");
+      li.textContent = `${name} has joined the game`;
+      multiplayerPlayersList.appendChild(li);
+    });
+
+    if (typeof remainingSeconds === "number") {
       startLobbyCountdown(remainingSeconds);
     }
-  );
-
-  socket.on(
-    "lobbyUpdate",
-    ({ lobbyId, players, remainingSeconds, message, hostName, selectedBaseTable }) => {
-      if (mpLobbyId && lobbyId !== mpLobbyId) return;
-      mpLobbyId = lobbyId;
-      mpInLobby = true;
-
-      document.body.classList.add("multi-lobby");
-
-      updateLobbyStatusFromPayload({ hostName, selectedBaseTable, message });
-
-      multiplayerPlayersList.innerHTML = "";
-      players.forEach((name) => {
-        const li = document.createElement("li");
-        li.textContent = `${name} has joined the game`;
-        multiplayerPlayersList.appendChild(li);
-      });
-
-      if (typeof remainingSeconds === "number") {
-        startLobbyCountdown(remainingSeconds);
-      }
-    }
-  );
+  });
 
   socket.on("gameStart", ({ lobbyId, questions }) => {
     mpLobbyId = lobbyId;
     mpInLobby = false;
-    document.body.classList.remove("multi-lobby");
     multiplayerStatus.textContent = "Game started!";
     stopLobbyCountdown();
     resetGameState();
@@ -1055,7 +1010,6 @@
     mpActive = false;
     isRunning = false;
     document.body.classList.remove("playing");
-    document.body.classList.remove("multi-lobby");
 
     multiplayerStatus.textContent = "Game finished. Showing leaderboard.";
 
@@ -1124,836 +1078,3 @@
   setFeedback("Press Start to begin.");
   clearQuestionState();
 })();
-* ================
-   Reset
-   ================ */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-}
-
-/* ================
-   Themes
-   ================ */
-
-html[data-theme="dark"] {
-  --bg-main: radial-gradient(circle at top, #111827 0, #020617 45%, #020617 100%);
-  --bg-header: rgba(15, 23, 42, 0.95);
-  --bg-card: rgba(15, 23, 42, 0.98);
-  --bg-card-soft: rgba(15, 23, 42, 0.9);
-  --border-subtle: rgba(148, 163, 184, 0.35);
-  --accent: #38bdf8;
-  --accent-soft: rgba(56, 189, 248, 0.12);
-  --accent-strong: #0ea5e9;
-  --text-main: #e5e7eb;
-  --text-soft: #9ca3af;
-  --danger: #f97373;
-  --success: #4ade80;
-  --pill-bg: rgba(15, 23, 42, 0.9);
-  --overlay-bg: rgba(15, 23, 42, 0.98);
-}
-
-html[data-theme="light"] {
-  --bg-main: radial-gradient(circle at top, #eff6ff 0, #e5e7eb 50%, #e5e7eb 100%);
-  --bg-header: rgba(248, 250, 252, 0.96);
-  --bg-card: #f9fafb;
-  --bg-card-soft: #f3f4f6;
-  --border-subtle: rgba(148, 163, 184, 0.5);
-  --accent: #2563eb;
-  --accent-soft: rgba(37, 99, 235, 0.12);
-  --accent-strong: #1d4ed8;
-  --text-main: #0f172a;
-  --text-soft: #6b7280;
-  --danger: #b91c1c;
-  --success: #16a34a;
-  --pill-bg: #e5e7eb;
-  --overlay-bg: #ffffff;
-}
-
-body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--bg-main);
-  color: var(--text-main);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.hidden {
-  display: none !important;
-}
-
-/* ================
-   Header
-   ================ */
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--bg-header);
-  border-bottom: 1px solid var(--border-subtle);
-  padding: 0.75rem 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-.logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.logo-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--accent-strong);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.7);
-}
-
-.logo-text {
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 0.78rem;
-  color: var(--text-soft);
-}
-
-/* Theme toggle button */
-.contrast-toggle {
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-card-soft);
-  color: var(--text-soft);
-  padding: 0.25rem 0.6rem;
-  font-size: 0.7rem;
-  cursor: pointer;
-  text-transform: uppercase;
-}
-
-/* ================
-   Main layout
-   ================ */
-.app-main {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-}
-
-.card {
-  background: var(--bg-card);
-  border-radius: 1.5rem;
-  border: 1px solid var(--border-subtle);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
-}
-
-.game-card {
-  width: 100%;
-  max-width: 520px;
-  padding: 1.75rem 1.5rem 1.5rem;
-}
-
-/* Title */
-.game-title {
-  font-size: 1.35rem;
-  margin: 0 0 0.9rem 0;
-  text-align: center;
-}
-
-/* ================
-   Play mode toggle (single vs multi)
-   ================ */
-.playmode-toggle {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.4rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-card-soft);
-  margin: 0 auto 0.6rem;
-  width: fit-content;
-}
-
-.mode-btn {
-  border: none;
-  background: transparent;
-  color: var(--text-soft);
-  font-size: 0.8rem;
-  padding: 0.25rem 0.8rem;
-  border-radius: 999px;
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-/* Dark mode: white text on toggles */
-html[data-theme="dark"] .mode-btn {
-  color: #e5e7eb;
-}
-
-.mode-btn.active {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  border: 1px solid var(--accent);
-}
-
-/* ================
-   Multiplayer controls
-   ================ */
-.multiplayer-controls {
-  border-radius: 1rem;
-  border: 1px dashed var(--border-subtle);
-  background: var(--bg-card-soft);
-  padding: 0.6rem 0.7rem;
-  margin-bottom: 0.7rem;
-  font-size: 0.8rem;
-}
-
-.mp-row {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  margin-bottom: 0.4rem;
-}
-
-.mp-name-label {
-  font-size: 0.8rem;
-  color: var(--text-soft);
-  white-space: nowrap;
-}
-
-.mp-name-input {
-  flex: 1;
-  min-width: 0;
-}
-
-.mp-join-btn {
-  width: 100%;
-  margin-bottom: 0.4rem;
-}
-
-.multiplayer-status {
-  color: var(--text-soft);
-  margin-bottom: 0.25rem;
-}
-
-/* Lobby countdown – bright digital style */
-.mp-countdown {
-  font-family: "DS-Digital", "Courier New", ui-monospace, SFMono-Regular,
-    Menlo, Monaco, Consolas, "Liberation Mono", "Lucida Console", monospace;
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #ff3b3b;
-  margin-bottom: 0.35rem;
-  text-align: center;
-  letter-spacing: 0.08em;
-  text-shadow: 0 0 8px rgba(255, 59, 59, 0.6);
-}
-
-.multiplayer-players-list {
-  list-style: none;
-  padding: 0;
-  margin: 0.25rem 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  align-items: flex-start;
-}
-
-.multiplayer-players-list li {
-  padding: 0.1rem 0.4rem;
-  border-radius: 999px;
-  background: var(--pill-bg);
-  border: 1px solid var(--border-subtle);
-  font-size: 0.75rem;
-}
-
-/* ================
-   Mode toggle (Multiplication vs Algebra)
-   ================ */
-.mode-toggle {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.4rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-card-soft);
-  margin: 0.6rem auto 0.9rem;
-  width: fit-content;
-}
-
-/* ================
-   Controls row
-   ================ */
-.controls-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: flex-end;
-  justify-content: center;
-  margin-bottom: 0.75rem;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 120px;
-}
-
-.field-label {
-  font-size: 0.8rem;
-  color: var(--text-soft);
-}
-
-.field-input {
-  background: var(--bg-card-soft);
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-main);
-  padding: 0.45rem 0.85rem;
-  font-size: 0.9rem;
-  outline: none;
-}
-
-.field-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.45);
-}
-
-.field-buttons {
-  flex-direction: row;
-  gap: 0.5rem;
-}
-
-/* Show/hide based on single / multi mode */
-.single-only {
-  display: flex;
-}
-
-body.multi-play .single-only {
-  display: none !important;
-}
-
-/* Show/hide controls based on multiplication vs algebra */
-.multi-only {
-  display: flex;
-}
-
-.algebra-only {
-  display: none;
-}
-
-body.algebra-mode .multi-only {
-  display: none;
-}
-
-body.algebra-mode .algebra-only {
-  display: flex;
-}
-
-/* ================
-   Timer
-   ================ */
-.timed-info {
-  text-align: center;
-  margin-bottom: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.timer-label {
-  font-size: 0.8rem;
-  color: var(--text-soft);
-}
-
-.timer-display {
-  font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, "Liberation Mono", "Lucida Console", monospace;
-  font-size: 1.2rem;
-  padding: 0.2rem 0.7rem;
-  border-radius: 0.5rem;
-  background: #111827;
-  color: #f87171;
-  letter-spacing: 0.08em;
-  min-width: 120px;
-  text-align: center;
-  border: 1px solid rgba(248, 113, 113, 0.4);
-  box-shadow: 0 0 10px rgba(248, 113, 113, 0.3);
-}
-
-/* ================
-   Question area
-   ================ */
-/* Hidden by default; only show when game is playing */
-.question-area {
-  display: none;
-  background: var(--bg-card-soft);
-  border-radius: 1.25rem;
-  padding: 1.1rem 1rem 1rem;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  margin-bottom: 0.6rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease,
-    background-color 0.15s ease;
-  min-height: 120px;
-}
-
-body.playing .question-area {
-  display: block;
-}
-
-.question-area.correct {
-  border-color: var(--success);
-  box-shadow: 0 0 12px rgba(74, 222, 128, 0.35);
-}
-
-.question-area.wrong {
-  border-color: var(--danger);
-  box-shadow: 0 0 12px rgba(248, 113, 113, 0.35);
-  background-color: rgba(127, 29, 29, 0.35);
-}
-
-/* Question meta pill */
-.question-meta-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  font-size: 0.85rem;
-  padding: 0.15rem 0.7rem;
-  border-radius: 999px;
-  background: var(--pill-bg);
-  border: 1px solid rgba(148, 163, 184, 0.6);
-  margin: 0 auto 0.4rem;
-}
-
-.dot-separator {
-  opacity: 0.7;
-}
-
-.question-pill {
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 0.4rem;
-  font-size: 1.8rem;
-  font-weight: 600;
-  padding: 0.45rem 0.9rem;
-  border-radius: 999px;
-  background: radial-gradient(circle at top, var(--accent-soft), transparent 70%);
-  margin: 0 auto 0.4rem;
-}
-
-.operator,
-.equals {
-  color: var(--accent-strong);
-}
-
-/* Result operand (only visible in algebra mode) */
-.result-operand {
-  min-width: 1.5ch;
-  text-align: center;
-}
-
-body.multiplication-mode .result-operand {
-  display: none;
-}
-
-body.algebra-mode .result-operand {
-  display: inline-block;
-}
-
-/* Hint below question */
-.question-hint {
-  text-align: center;
-  font-size: 0.9rem;
-  color: var(--text-soft);
-  min-height: 1.1rem;
-}
-
-/* Answer BELOW question */
-.answer-wrapper {
-  margin-top: 0.5rem;
-  text-align: center;
-}
-
-.answer-input-below {
-  width: 80%;
-  max-width: 300px;
-  font-size: 2.4rem;
-  font-weight: 700;
-  padding: 0.6rem 0.8rem;
-  border-radius: 1rem;
-  border: 2px solid var(--accent);
-  background: #0f172a;
-  color: #f9fafb;
-  text-align: center;
-  outline: none;
-}
-
-/* Light theme override for answer box */
-html[data-theme="light"] .answer-input-below {
-  background: #ffffff;
-  color: #0f172a;
-}
-
-/* ================
-   Buttons
-   ================ */
-.button-row {
-  display: none;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-bottom: 0.5rem;
-}
-
-body.playing .button-row {
-  display: flex;
-}
-
-.btn {
-  border-radius: 999px;
-  border: 1px solid transparent;
-  padding: 0.45rem 0.9rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 90px;
-}
-
-.btn.primary {
-  background: linear-gradient(135deg, #0f766e, #22c55e);
-  color: #ecfdf3;
-  border-color: rgba(16, 185, 129, 0.7);
-}
-
-.btn.primary:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-}
-
-.btn.ghost {
-  background: transparent;
-  border-color: var(--border-subtle);
-  color: var(--text-soft);
-}
-
-.btn.ghost:hover {
-  border-color: var(--accent);
-  color: var(--accent-strong);
-}
-
-/* Stop button */
-.btn.danger {
-  background: linear-gradient(135deg, #b91c1c, #ef4444);
-  color: #fee2e2;
-  border-color: rgba(239, 68, 68, 0.6);
-}
-
-.btn.danger:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-}
-
-/* ================
-   Feedback + stats
-   ================ */
-.feedback {
-  text-align: center;
-  font-size: 0.9rem;
-  margin-top: 0.6rem;
-  min-height: 1.2rem;
-}
-
-.feedback.correct {
-  color: var(--success);
-}
-
-.feedback.wrong {
-  color: var(--danger);
-}
-
-.stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  justify-content: center;
-  margin-top: 0.7rem;
-  font-size: 0.8rem;
-}
-
-.stat-pill {
-  background: var(--pill-bg);
-  border-radius: 999px;
-  padding: 0.3rem 0.75rem;
-  border: 1px solid rgba(148, 163, 184, 0.5);
-}
-
-/* You said the 4 stats pills are not needed visually */
-.stats {
-  display: none !important;
-}
-
-/* Home button – only for lobby view */
-.home-btn {
-  display: none;
-  margin-top: 0.8rem;
-  width: 100%;
-}
-
-/* ================
-   Big tick / cross overlay
-   ================ */
-.result-overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 50;
-}
-
-.result-icon {
-  font-size: 5rem;
-  font-weight: 700;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  text-shadow: 0 0 18px rgba(0, 0, 0, 0.8);
-}
-
-.result-icon.show {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.result-icon.correct-flash {
-  color: var(--success);
-}
-
-.result-icon.wrong-flash {
-  color: var(--danger);
-}
-
-/* ================
-   Keypad
-   ================ */
-.keypad {
-  margin: 0.6rem auto 0.6rem;
-  max-width: 360px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  opacity: 0;
-  transform: translateY(30px);
-  max-height: 0;
-  overflow: hidden;
-  transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.25s ease;
-}
-
-/* Slide-up visible state */
-.keypad.keypad-visible {
-  opacity: 1;
-  transform: translateY(0);
-  max-height: 400px;
-}
-
-.keypad button {
-  border-radius: 0.9rem;
-  border: 1px solid var(--border-subtle);
-  background: #020617;
-  color: #f9fafb;
-  font-size: 1.4rem;
-  font-weight: 600;
-  padding: 0.65rem 0;
-  cursor: pointer;
-  transition: background 0.12s ease, transform 0.1s ease, box-shadow 0.1s ease;
-}
-
-/* Light mode keypad */
-html[data-theme="light"] .keypad button {
-  background: #e5e7eb;
-  color: #0f172a;
-}
-
-.keypad button:active {
-  transform: translateY(1px);
-  box-shadow: 0 0 0 1px var(--accent-soft);
-}
-
-.keypad-func {
-  font-size: 0.9rem;
-}
-
-.keypad-enter {
-  grid-column: 1 / -1;
-  background: linear-gradient(135deg, #0f766e, #22c55e);
-  border-color: rgba(16, 185, 129, 0.7);
-}
-
-/* ================
-   Leaderboard overlay
-   ================ */
-.leaderboard-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 60;
-}
-
-.leaderboard-card {
-  background: var(--overlay-bg);
-  color: var(--text-main);
-  border-radius: 1.5rem;
-  padding: 1.2rem 1.4rem 1rem;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
-  border: 1px solid var(--border-subtle);
-}
-
-.leaderboard-title {
-  margin: 0 0 0.75rem;
-  text-align: center;
-}
-
-.leaderboard-content {
-  max-height: 260px;
-  overflow-y: auto;
-  margin-bottom: 0.75rem;
-  font-size: 0.9rem;
-}
-
-.leaderboard-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.leaderboard-table th,
-.leaderboard-table td {
-  padding: 0.3rem 0.4rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
-  text-align: left;
-  font-size: 0.8rem;
-}
-
-.leaderboard-table th {
-  font-weight: 600;
-}
-
-.leaderboard-table tr:nth-child(1) td {
-  font-weight: 700;
-}
-
-.lb-close-btn {
-  width: 100%;
-}
-
-/* ================
-   MINIMAL PLAYING UI (all devices)
-   ================ */
-/* When the game is running, hide all the top controls everywhere
-   so you basically see: question area + answer pill + keypad + bottom buttons */
-body.playing .app-header,
-body.playing .game-title,
-body.playing .feedback,
-body.playing .stats,
-body.playing .timed-info,
-body.playing .mode-toggle,
-body.playing .playmode-toggle,
-body.playing .multiplayer-controls,
-body.playing .controls-row {
-  display: none;
-}
-
-/* Lobby layout: hide everything below multiplayer pill while waiting */
-body.multi-lobby .mode-toggle,
-body.multi-lobby .controls-row,
-body.multi-lobby .timed-info,
-body.multi-lobby .question-area,
-body.multi-lobby .keypad,
-body.multi-lobby .button-row,
-body.multi-lobby .feedback,
-body.multi-lobby .stats {
-  display: none !important;
-}
-
-/* Show Home button in lobby */
-body.multi-lobby .home-btn {
-  display: inline-flex;
-}
-
-/* Hide Home button during active play */
-body.playing .home-btn {
-  display: none !important;
-}
-
-/* Allow scrolling so buttons are never cut off */
-body.playing {
-  overflow-y: auto;
-}
-
-/* ================
-   Mobile tweaks
-   ================ */
-@media (max-width: 600px) {
-  .app-main {
-    align-items: stretch;
-    padding: 0.75rem;
-  }
-
-  .game-card {
-    padding: 1.25rem 1rem 1rem;
-    border-radius: 1.25rem;
-  }
-
-  .game-title {
-    font-size: 1.2rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .question-pill {
-    font-size: 1.6rem;
-  }
-
-  .answer-input-below {
-    font-size: 1.6rem;
-    padding: 0.45rem 0.6rem;
-    border-width: 2px;
-    max-width: 220px;
-  }
-
-  .keypad button {
-    font-size: 1.5rem;
-    padding: 0.75rem 0;
-  }
-
-  body.playing .question-area {
-    margin-top: 0.25rem;
-  }
-}

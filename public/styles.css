@@ -224,17 +224,14 @@ html[data-theme="dark"] .mode-btn {
   margin-bottom: 0.25rem;
 }
 
-/* Lobby countdown – bright digital style */
+/* Lobby countdown */
 .mp-countdown {
-  font-family: "DS-Digital", "Courier New", ui-monospace, SFMono-Regular,
-    Menlo, Monaco, Consolas, "Liberation Mono", "Lucida Console", monospace;
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #ff3b3b;
+  font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Lucida Console", monospace;
+  font-size: 1.1rem;
+  color: #f97373;
   margin-bottom: 0.35rem;
   text-align: center;
-  letter-spacing: 0.08em;
-  text-shadow: 0 0 8px rgba(255, 59, 59, 0.6);
 }
 
 .multiplayer-players-list {
@@ -589,13 +586,6 @@ body.playing .button-row {
   display: none !important;
 }
 
-/* Home button – only for lobby view */
-.home-btn {
-  display: none;
-  margin-top: 0.8rem;
-  width: 100%;
-}
-
 /* ================
    Big tick / cross overlay
    ================ */
@@ -763,28 +753,6 @@ body.playing .playmode-toggle,
 body.playing .multiplayer-controls,
 body.playing .controls-row {
   display: none;
-}
-
-/* Lobby layout: hide everything below multiplayer pill while waiting */
-body.multi-lobby .mode-toggle,
-body.multi-lobby .controls-row,
-body.multi-lobby .timed-info,
-body.multi-lobby .question-area,
-body.multi-lobby .keypad,
-body.multi-lobby .button-row,
-body.multi-lobby .feedback,
-body.multi-lobby .stats {
-  display: none !important;
-}
-
-/* Show Home button in lobby */
-body.multi-lobby .home-btn {
-  display: inline-flex;
-}
-
-/* Hide Home button during active play */
-body.playing .home-btn {
-  display: none !important;
 }
 
 /* Allow scrolling so buttons are never cut off */
