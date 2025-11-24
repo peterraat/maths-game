@@ -353,32 +353,36 @@
       c = a * b;
     }
 
-    // positions: 0 = left, 1 = right, 2 = result
-    let positions;
-    if (difficulty === "easy") {
-      positions = [2]; // only hide result
-    } else {
-      positions = [0, 1, 2];
-    }
+  // positions: 0 = left, 1 = right, 2 = result
+  let positions;
+  if (difficulty === "easy") {
+    positions = [2]; // only hide result
+  } else {
+    positions = [0, 1, 2];
+  }
 
-    const letters = ["X", "Y", "Z"];
-    const letter = letters[randInt(0, letters.length - 1)];
+  // choose which position to hide
+  const hidePos = positions[randInt(0, positions.length - 1)];
 
-    let leftDisplay = String(a);
-    let rightDisplay = String(b);
-    let resultDisplay = String(c);
-    let answer;
+  const letters = ["X", "Y", "Z"];
+  const letter = letters[randInt(0, letters.length - 1)];
 
-    if (hidePos === 0) {
-      leftDisplay = letter;
-      answer = a;
-    } else if (hidePos === 1) {
-      rightDisplay = letter;
-      answer = b;
-    } else {
-      resultDisplay = letter;
-      answer = c;
-    }
+  let leftDisplay = String(a);
+  let rightDisplay = String(b);
+  let resultDisplay = String(c);
+  let answer;
+
+  if (hidePos === 0) {
+    leftDisplay = letter;
+    answer = a;
+  } else if (hidePos === 1) {
+    rightDisplay = letter;
+    answer = b;
+  } else {
+    resultDisplay = letter;
+    answer = c;
+  }
+
 
     const opSymbol = op === "×" ? "×" : op;
 
