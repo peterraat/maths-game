@@ -1,3 +1,4 @@
+// server.js
 const express = require("express");
 const http = require("http");
 const path = require("path");
@@ -90,23 +91,6 @@ function startGame(lobby) {
   });
 }
 
-function buildLobbyInfo(lobby) {
-  const hostPlayer =
-    lobby.players.find((p) => p.id === lobby.hostId) || null;
-  const hostName = hostPlayer ? hostPlayer.name : lobby.hostName || "Host";
-
-  const selectedBaseTable = lobby.hostSettings?.baseTable
-    ? Number(lobby.hostSettings.baseTable)
-    : null;
-
-  let message = "Waiting for other players to join...";
-  if (selectedBaseTable && hostName) {
-    message = `${hostName} has selected ${selectedBaseTable} times table`;
-  }
-
-  return { hostName, selectedBaseTable, message };
-}
-
 function scheduleLobbyStart(lobby) {
   // When lobby is created, schedule automatic start after N seconds
   clearLobbyTimers();
@@ -125,15 +109,11 @@ function scheduleLobbyStart(lobby) {
       Math.ceil(remainingMs / 1000)
     );
 
-    const { hostName, selectedBaseTable, message } = buildLobbyInfo(lobby);
-
     const updatePayload = {
       lobbyId: lobby.id,
       players: lobby.players.map((p) => p.name),
       remainingSeconds,
-      message,
-      hostName,
-      selectedBaseTable,
+      message: "Waiting for other players to join...",
     };
 
     lobby.players.forEach((p) => {
@@ -158,7 +138,6 @@ function createLobby(socketId, hostName, hostSettings) {
   const lobby = {
     id: lobbyId,
     hostId: socketId,
-    hostName: hostName,
     hostSettings: hostSettings || { baseTable: "", maxTable: 10 },
     players: [{ id: socketId, name: hostName }],
     results: [],
@@ -198,16 +177,11 @@ io.on("connection", (socket) => {
         Math.ceil((lobby.endsAt - Date.now()) / 1000)
       );
 
-      const { hostName, selectedBaseTable, message } = buildLobbyInfo(lobby);
-
       const payload = {
         lobbyId: lobby.id,
         players: lobby.players.map((p) => p.name),
         remainingSeconds,
         isHost: true,
-        hostName,
-        selectedBaseTable,
-        message,
       };
 
       socket.emit("lobbyJoined", payload);
@@ -226,17 +200,12 @@ io.on("connection", (socket) => {
       ? Math.max(0, Math.ceil((lobby.endsAt - Date.now()) / 1000))
       : 0;
 
-    const { hostName, selectedBaseTable, message } = buildLobbyInfo(lobby);
-
     // Notify this player
     socket.emit("lobbyJoined", {
       lobbyId: lobby.id,
       players: lobby.players.map((p) => p.name),
       remainingSeconds,
       isHost: false,
-      hostName,
-      selectedBaseTable,
-      message,
     });
 
     // Notify everyone else
@@ -244,9 +213,7 @@ io.on("connection", (socket) => {
       lobbyId: lobby.id,
       players: lobby.players.map((p) => p.name),
       remainingSeconds,
-      message,
-      hostName,
-      selectedBaseTable,
+      message: "Player joined the lobby.",
     };
     lobby.players.forEach((p) => {
       io.to(p.id).emit("lobbyUpdate", updatePayload);
@@ -332,16 +299,11 @@ io.on("connection", (socket) => {
         const remainingSeconds = lobby.endsAt
           ? Math.max(0, Math.ceil((lobby.endsAt - Date.now()) / 1000))
           : 0;
-
-        const { hostName, selectedBaseTable, message } = buildLobbyInfo(lobby);
-
         const updatePayload = {
           lobbyId: lobby.id,
           players: lobby.players.map((p) => p.name),
           remainingSeconds,
-          message,
-          hostName,
-          selectedBaseTable,
+          message: "A player left the lobby.",
         };
         lobby.players.forEach((p) => {
           io.to(p.id).emit("lobbyUpdate", updatePayload);
